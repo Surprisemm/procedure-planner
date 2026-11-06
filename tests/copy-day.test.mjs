@@ -8,7 +8,7 @@ test('full copy replaces a prepared day without duplicating records and preserve
   origin.cells.push({id:'area',patientId:id,start:720,duration:10,color:'#f7df88',text:'Заметка'});setPatientEnabled(origin,p.patients[1].id,false);
   p.days[target]=makeDay(target,p.patients);setPatientEnabled(p.days[target],id,false);p.days[target].appointments=[{...clone(origin.appointments[0]),id:'old-target'}];
   const before=clone(origin);const result=copyScheduleDay(p,source,target,{appointments:true,replace:true});
-  assert.deepEqual(p.days[source],before);assert.equal(result.date,target);assert.equal(result.end,1020);assert.equal(result.appointments.length,origin.appointments.length);assert.ok(!result.appointments.some(a=>a.id==='old-target'));
+  assert.deepEqual(p.days[source],before);assert.equal(result.date,target);assert.equal(result.end,1020);assert.equal(result.appointments.length,origin.appointments.filter(a=>a.patientId!==id).length,'a patient switched off in the target stays empty');assert.ok(!result.appointments.some(a=>a.patientId===id));assert.ok(!result.appointments.some(a=>a.id==='old-target'));
   assert.deepEqual(result.disabledPatientIds,[id]);assert.equal(result.columns[0].headerColor,'#f7df88');assert.equal(result.bands.length,2);assert.equal(result.cells[0].text,'Заметка');
   for(const key of ['appointments','bands','cells'])assert.ok(result[key].every(a=>!origin[key].some(b=>b.id===a.id)));
   result.appointments[0].duration=30;result.bands[0].start=785;result.cells[0].text='Изменено';assert.deepEqual(origin,before);validateProject(p);

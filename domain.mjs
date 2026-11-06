@@ -22,8 +22,44 @@ export function stayDates(startDate,endDate=addCalendarDays(startDate,27)){
   const start=calendarTime(startDate),end=calendarTime(endDate);assert(end>=start,'Дата окончания не может быть раньше даты начала');
   return Array.from({length:(end-start)/86400000+1},(_,i)=>addCalendarDays(startDate,i));
 }
+// A procedure that does not fit the grid step could never be placed on the schedule.
+export function procedureDurationError(value,step){
+  if(!Number.isInteger(value)||value<step||value>480)return `Укажите длительность от ${step} до 480 минут`;
+  return value%step?`Длительность должна быть кратна шагу сетки: ${step} мин`:null;
+}
 export function durationFor(procedure, day) {
   return procedure.duration || 55;
+}
+export const workKey=(procedureId,instructorId)=>`${procedureId}:${instructorId||''}`;
+// The first instructor uses the procedure's own colour; the others have their own.
+export function instructorColor(procedure,instructorId){
+  const list=procedure.instructors||[],index=list.findIndex(x=>x.instructorId===instructorId);
+  return index>0?list[index].color:procedure.color;
+}
+// One library card per procedure: older projects kept a copy of a procedure for
+// each instructor. Merge those by name and keep each copy's colour for its instructor.
+export function upgradeProcedureInstructors(p){
+  if(p.procedures.every(x=>Array.isArray(x.instructors)))return p;
+  const merged=new Map(),result=[],moved=new Map();
+  for(const procedure of p.procedures){
+    const key=procedure.name.trim().toLowerCase(),instructorId=procedure.instructorId||null;
+    delete procedure.instructorId;
+    let target=merged.get(key);
+    if(!target){target=procedure;target.instructors=[];merged.set(key,target);result.push(target);}
+    moved.set(procedure.id,{id:target.id,instructorId});
+    if(!instructorId||target.instructors.some(x=>x.instructorId===instructorId))continue;
+    target.instructors.push({instructorId,color:target.instructors.length?procedure.color:target.color});
+  }
+  p.procedures=result;
+  for(const schedule of [p,...(p.stays||[])]){
+    for(const d of Object.values(schedule.days||{}))for(const a of d.appointments)if(moved.has(a.procedureId))a.procedureId=moved.get(a.procedureId).id;
+    for(const settings of Object.values(schedule.autofill?.weekdays||{})){
+      const work={};
+      for(const [id,value] of Object.entries(settings.instructors||{})){const place=moved.get(id);work[place?workKey(place.id,place.instructorId):id]=value;}
+      settings.instructors=work;
+    }
+  }
+  return p;
 }
 export function updateProcedureTemplate(project,date,id,patch,{applyToDay=false}={}){
   const procedure=project.procedures.find(p=>p.id===id);
@@ -31,7 +67,7 @@ export function updateProcedureTemplate(project,date,id,patch,{applyToDay=false}
   const d=project.days[date];assert(d,'День не найден');
   const appointments=applyToDay?d.appointments.filter(a=>a.procedureId===id):[];
   const changes={};
-  for(const key of ['color','textColor','duration','instructorId'])if(Object.hasOwn(patch,key))changes[key]=patch[key];
+  for(const key of ['textColor','duration'])if(Object.hasOwn(patch,key))changes[key]=patch[key];
   if(Object.hasOwn(patch,'name'))changes.text=patch.name;
   if(patch.textStyles?.name){
     changes.textStyles={text:clone(patch.textStyles.name)};
@@ -43,10 +79,13 @@ export function updateProcedureTemplate(project,date,id,patch,{applyToDay=false}
     assert(!error,error);
   }
   Object.assign(procedure,clone(patch));
+  if(Object.hasOwn(patch,'color')&&procedure.instructors?.[0])procedure.instructors[0].color=patch.color;
   for(const a of appointments){
     const styles=a.textStyles;
     Object.assign(a,clone(changes));
     if(changes.textStyles)a.textStyles={...styles,...a.textStyles};
+    if(Object.hasOwn(patch,'instructors')&&!procedure.instructors.some(x=>x.instructorId===a.instructorId))a.instructorId=procedure.instructors[0]?.instructorId??null;
+    if(Object.hasOwn(patch,'color')||Object.hasOwn(patch,'instructors'))a.color=instructorColor(procedure,a.instructorId);
   }
   if(appointments.length)expandDayCanvas(d);
   return appointments.length;
@@ -60,10 +99,10 @@ export function makeDay(date, patients = []) {
 }
 export function newProject(demo = true) {
   const names=['Анна Соколова','Михаил Волков','Елена Орлова','Александр Морозов','Мария Лебедева','Дмитрий Козлов','Ольга Новикова','Андрей Павлов','Ирина Смирнова','Сергей Белов'];
-  const patients = demo ? names.map((name,i)=>({id:uid(),name,house:String(1+Math.floor(i/2)),note:'',archived:false})) : [];
+  const patients = demo ? names.map((name,i)=>({id:uid(),name,house:String(1+Math.floor(i/2)),archived:false})) : [];
   const procedures = [
     ['Массаж','#f7df88'],['Физиотерапия','#bddcc2'],['Эрготерапия','#f3b5ac'],['Спорт','#a8d9ee'],['АФК · кушетка','#d7cef0'],['АФК · тренажёр','#d8dfe8']
-  ].map(([name,color])=>({id:uid(),name,color,textColor:'#26332f',duration:55,note:''}));
+  ].map(([name,color])=>({id:uid(),name,color,textColor:'#26332f',duration:55,note:'',instructors:[]}));
   const date=localDate(); const day=makeDay(date,patients);
   if (demo) patients.forEach((p,i)=>{
     [0,1,2].forEach((_,j)=>{
@@ -108,7 +147,24 @@ export function layoutAppointments(items) {
 function assert(condition,message){if(!condition)throw Error(message);}
 export const isPatientEnabled=(day,id)=>!(day.disabledPatientIds||[]).includes(id);
 export const visibleColumns=day=>day.columns.filter(c=>isPatientEnabled(day,c.patientId));
-export function setPatientEnabled(day,id,enabled){assert(day.columns.some(c=>c.patientId===id),'Пациент не найден');day.disabledPatientIds=[...new Set(day.disabledPatientIds||[])].filter(value=>value!==id);if(!enabled)day.disabledPatientIds.push(id);}
+// Default end of the exported image: the last procedure of the patients shown that day.
+export function exportEndTime(day){
+  const ends=day.appointments.filter(a=>isPatientEnabled(day,a.patientId)).map(a=>a.start+a.duration);
+  return Math.min(1439,ends.length?Math.max(...ends):day.end);
+}
+export function setPatientEnabled(day,id,enabled){assert(day.columns.some(c=>c.patientId===id),'Пациент не найден');day.disabledPatientIds=[...new Set(day.disabledPatientIds||[])].filter(value=>value!==id);if(!enabled)day.disabledPatientIds.push(id);
+  // Switching a patient off or on leaves the column empty for this day, locked work included.
+  day.appointments=day.appointments.filter(a=>a.patientId!==id);}
+// Moves a patient among the columns shown today. Patients switched off today stay in
+// the list; the moved one lands next to its new visible neighbour.
+export function moveVisiblePatient(project,visibleIds,id,to){
+  const rest=visibleIds.filter(value=>value!==id);
+  assert(project.patients.some(p=>p.id===id),'Пациент не найден');
+  const patient=project.patients.find(p=>p.id===id);
+  project.patients=project.patients.filter(p=>p.id!==id);
+  const index=to<rest.length?project.patients.findIndex(p=>p.id===rest[to]):project.patients.findIndex(p=>p.id===rest[rest.length-1])+1;
+  project.patients.splice(index<0?project.patients.length:index,0,patient);
+}
 export function syncSharedRoster(schedule){
   const patients=schedule.patients.filter(p=>!p.archived);
   for(const day of Object.values(schedule.days)){
@@ -124,7 +180,7 @@ function upgradeRoster(schedule){
   return syncSharedRoster(schedule);
 }
 export function ensureStays(p){
-  p.instructors??=[];
+  p.instructors??=[];upgradeProcedureInstructors(p);
   if(!p.stays){const id=uid();p.currentStayId=id;p.stays=[{id,name:p.demo?'Демонстрационное расписание':'Первое расписание'}];}
   upgradeRoster(p);
   for(const schedule of p.stays){if(schedule.name==='Первый заезд')schedule.name='Первое расписание';if(schedule.name==='Демонстрационный заезд')schedule.name='Демонстрационное расписание';if(schedule.id!==p.currentStayId)upgradeRoster(schedule);}
@@ -157,7 +213,7 @@ export function copyScheduleDay(p,sourceDate,targetDate,{appointments=false,repl
   assert(p.days[sourceDate],'Исходный день не найден');assert(sourceDate!==targetDate,'Выберите другой день для копии');calendarTime(targetDate);
   const target=p.days[targetDate];assert(!target||replace,'На эту дату уже есть расписание');
   const copied=clone(p.days[sourceDate]);copied.date=targetDate;copied.disabledPatientIds=target?clone(target.disabledPatientIds||[]):[];
-  copied.appointments=appointments?copied.appointments.map(a=>({...a,id:uid()})):[];
+  const hidden=new Set([...(p.days[sourceDate].disabledPatientIds||[]),...copied.disabledPatientIds]);copied.appointments=appointments?copied.appointments.filter(a=>!hidden.has(a.patientId)).map(a=>({...a,id:uid()})):[];
   copied.bands=copied.bands.map(b=>({...b,id:uid()}));copied.cells=copied.cells.map(c=>({...c,id:uid()}));p.days[targetDate]=copied;return copied;
 }
 export function transferAppointment(p,sourceDate,id,targetDate,move=false){
@@ -166,6 +222,17 @@ export function transferAppointment(p,sourceDate,id,targetDate,move=false){
   const next={...clone(item),id:uid()},error=validatePlacement(target,next);assert(!error,error);
   if(!target.columns.some(c=>c.patientId===item.patientId))target.columns.push(clone(source.columns.find(c=>c.patientId===item.patientId)));
   target.appointments.push(next);expandDayCanvas(target);if(move)source.appointments=source.appointments.filter(a=>a.id!==id);return next;
+}
+// Optional generator settings stored on a schedule; older files simply lack them.
+export function validateAutofill(a){
+  if(a===undefined)return;
+  const record=x=>x&&typeof x==='object'&&!Array.isArray(x);
+  assert(record(a)&&Array.isArray(a.links)&&(a.groups===undefined||record(a.groups))&&record(a.weekdays),'Некорректные настройки автозаполнения');
+  a.links.forEach(l=>assert(record(l)&&typeof l.a==='string'&&typeof l.b==='string'&&typeof l.simultaneous==='boolean','Некорректная связка процедур'));
+  assert(Object.values(a.groups||{}).every(g=>typeof g==='string'),'Некорректная группа пациентов');
+  assert(a.groupList===undefined||(Array.isArray(a.groupList)&&a.groupList.every(g=>record(g)&&typeof g.id==='string'&&typeof g.name==='string'&&(g.values===undefined||(record(g.values)&&Object.values(g.values).every(n=>Number.isInteger(n)&&n>=1))))),'Некорректный список групп');
+  assert(a.lastWeekday===undefined||/^[0-6]$/.test(a.lastWeekday),'Некорректный день недели');
+  for(const [weekday,s] of Object.entries(a.weekdays))assert(/^[0-6]$/.test(weekday)&&record(s)&&Number.isInteger(s.start)&&Number.isInteger(s.end)&&Number.isInteger(s.slot)&&['full','partial'].includes(s.mode)&&Array.isArray(s.partialKeys)&&record(s.blockedBands)&&record(s.rows)&&record(s.instructors),'Некорректные настройки автозаполнения');
 }
 export function validateProject(p) {
   assert(p && p.version===1 && Array.isArray(p.patients) && Array.isArray(p.procedures) && p.days && typeof p.days==='object' && !Array.isArray(p.days),'Неподдерживаемый формат проекта');
@@ -176,6 +243,11 @@ export function validateProject(p) {
   for(const i of p.instructors||[])assert(typeof i.name==='string'&&i.name.trim()&&i.name.length<=140,'Некорректная карточка инструктора');
   const checkInstructor=record=>assert(record.instructorId==null||instructorIds.has(record.instructorId),'Инструктор не найден');
   p.procedures.forEach(checkInstructor);
+  for(const x of p.procedures){
+    if(x.instructors===undefined)continue;
+    assert(Array.isArray(x.instructors)&&new Set(x.instructors.map(w=>w?.instructorId)).size===x.instructors.length,'Некорректный список инструкторов процедуры');
+    for(const w of x.instructors)assert(instructorIds.has(w.instructorId)&&/^#[0-9a-f]{6}$/i.test(w.color),'Некорректный инструктор процедуры');
+  }
   p.patients.forEach(x=>assert(typeof x.name==='string'&&typeof x.house==='string','Некорректная карточка пациента'));
   const color=x=>typeof x==='string' && /^#[0-9a-f]{6}$/i.test(x);
   if(p.colorPresets!==undefined)assert(Array.isArray(p.colorPresets)&&p.colorPresets.every(color),'Некорректная палитра');
@@ -205,7 +277,7 @@ export function validateProject(p) {
   }
   if(p.stays!==undefined){
     assert(Array.isArray(p.stays)&&p.stays.length>0,'Некорректный список заездов');const ids=checkIdList(p.stays);assert(ids.has(p.currentStayId),'Текущий заезд не найден');
-    for(const stay of p.stays){assert(typeof stay.name==='string'&&stay.name.trim(),'Нет названия расписания');if(stay.startDate!==undefined||stay.endDate!==undefined){assert(typeof stay.startDate==='string'&&typeof stay.endDate==='string','Неполные даты заезда');assert(calendarTime(stay.endDate)>=calendarTime(stay.startDate),'Дата окончания не может быть раньше даты начала');}if(stay.id!==p.currentStayId)validateProject({version:1,patients:stay.patients,days:stay.days,procedures:p.procedures,instructors:p.instructors,templates:stay.templates,rosterVersion:stay.rosterVersion});}
+    for(const stay of p.stays){assert(typeof stay.name==='string'&&stay.name.trim(),'Нет названия расписания');validateAutofill(stay.autofill);if(stay.startDate!==undefined||stay.endDate!==undefined){assert(typeof stay.startDate==='string'&&typeof stay.endDate==='string','Неполные даты заезда');assert(calendarTime(stay.endDate)>=calendarTime(stay.startDate),'Дата окончания не может быть раньше даты начала');}if(stay.id!==p.currentStayId)validateProject({version:1,patients:stay.patients,days:stay.days,procedures:p.procedures,instructors:p.instructors,templates:stay.templates,rosterVersion:stay.rosterVersion});}
   }
   return p;
 }
@@ -213,6 +285,6 @@ export function validateProject(p) {
 export function removeInstructor(project,id){
   assert((project.instructors||[]).some(i=>i.id===id),'Инструктор не найден');
   project.instructors=project.instructors.filter(i=>i.id!==id);
-  for(const p of project.procedures)if(p.instructorId===id)p.instructorId=null;
+  for(const p of project.procedures)p.instructors=(p.instructors||[]).filter(w=>w.instructorId!==id);
   for(const schedule of [project,...(project.stays||[]).filter(s=>s.id!==project.currentStayId)])for(const d of Object.values(schedule.days||{}))for(const a of d.appointments)if(a.instructorId===id)a.instructorId=null;
 }

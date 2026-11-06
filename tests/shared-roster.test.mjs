@@ -8,3 +8,17 @@ test('removing patient removes their columns and assignments across this schedul
 test('legacy migration unifies incomplete daily rosters and preserves historical assignments',()=>{const p=newProject(),date=Object.keys(p.days)[0],before=clone(p.days[date].appointments);p.patients[0].archived=true;p.days['2026-12-01']=makeDay('2026-12-01',[]);ensureStays(p);assert.equal(p.patients[0].archived,false);assert.equal(p.days['2026-12-01'].columns.length,10);assert.deepEqual(p.days[date].appointments,before);validateProject(p);});
 test('procedure library is shared while schedule rosters remain separate',()=>{const p=fixture(),first=p.currentStayId,date=Object.keys(p.days)[0];createStay(p,'Независимый список',date);p.procedures[0].name='Общая процедура';switchStay(p,first);assert.equal(p.procedures[0].name,'Общая процедура');assert.equal(p.patients.length,10);});
 test('schema rejects a day with a different patient roster',()=>{const p=fixture();Object.values(p.days)[0].columns.pop();assert.throws(()=>validateProject(p),/общим/);});
+
+import {moveVisiblePatient} from '../domain.mjs';
+test('moving a patient among visible columns keeps hidden and archived ones in the list',()=>{
+  const names=list=>list.map(x=>x.id).join('');
+  const make=()=>({patients:['a','b','c','d','e'].map(id=>({id}))});
+  let p=make();moveVisiblePatient(p,['a','b','c','d','e'],'a',2);assert.equal(names(p.patients),'bcade');
+  p=make();moveVisiblePatient(p,['a','b','c','d','e'],'e',0);assert.equal(names(p.patients),'eabcd');
+  p=make();moveVisiblePatient(p,['a','b','c','d','e'],'b',4);assert.equal(names(p.patients),'acdeb');
+  p=make();moveVisiblePatient(p,['a','c','e'],'a',1);assert.ok(names(p.patients).includes('b')&&names(p.patients).includes('d'),'hidden patients stay');
+  assert.ok(names(p.patients).indexOf('a')>names(p.patients).indexOf('c')&&names(p.patients).indexOf('a')<names(p.patients).indexOf('e'),'a lands between its visible neighbours');
+  assert.equal(p.patients.length,5);
+  p=make();moveVisiblePatient(p,['a','c','e'],'e',0);assert.ok(names(p.patients).indexOf('e')<names(p.patients).indexOf('a'));
+  p=make();moveVisiblePatient(p,['a','c','e'],'a',2);assert.ok(names(p.patients).indexOf('a')>names(p.patients).indexOf('e'));
+});

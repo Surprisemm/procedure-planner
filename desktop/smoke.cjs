@@ -90,14 +90,16 @@ module.exports=async function runSmoke({app,window:mainWindow,smokeDir,root:ROOT
       const count=document.querySelectorAll('[data-appointment]').length;first.click();
       assert(document.querySelectorAll('.column-header').length===9&&document.querySelectorAll('.patient-day-toggle').length===10,'Checkbox should hide only the column');
       let state=JSON.parse(window.ritmDesktop.storage.load().data),date=document.querySelector('#date-picker').value;
-      assert(state.days[date].appointments.length===count,'Turning off deleted assignments');
+      const ownCount=count-document.querySelectorAll('[data-appointment]').length;assert(ownCount>0&&state.days[date].appointments.length===count-ownCount&&!state.days[date].appointments.some(a=>a.patientId===id),'Turning off must delete the patient appointments');
+      document.body.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,ctrlKey:true,code:'KeyZ'}));assert(document.querySelector('[data-patient-toggle="'+id+'"]').checked&&document.querySelectorAll('[data-appointment]').length===count,'Undo must restore the appointments');
+      document.querySelector('[data-patient-toggle="'+id+'"]').click();state=JSON.parse(window.ritmDesktop.storage.load().data);
       const hiddenWidth=renderScheduleImage(state.days[date]).width;
       assert(renderScheduleImage({...state.days[date],disabledPatientIds:[]}).width-hiddenWidth===288,'PNG includes disabled patient');
       document.querySelector('[data-action="new-day"]').click();document.querySelector('#day-form').requestSubmit();
       assert(document.querySelectorAll('.patient-day-toggle:checked').length===10&&document.querySelectorAll('.column-header').length===10,'New copied day inherited disabled state');
       document.querySelector('[data-action="goto-day"][data-date="'+date+'"]').click();
       assert(!document.querySelector('[data-patient-toggle="'+id+'"]').checked,'Day-specific toggle was not preserved');
-      document.querySelector('[data-patient-toggle="'+id+'"]').click();assert(document.querySelectorAll('[data-appointment]').length===count,'Re-enabling did not restore assignments');
+      document.querySelector('[data-patient-toggle="'+id+'"]').click();assert(document.querySelectorAll('[data-appointment]').length===count-ownCount,'Re-enabling must leave the patient empty');
       for(let i=0;i<10;i++)document.querySelectorAll('.patient-day-toggle')[i].click();
       assert(document.querySelector('.empty-schedule').textContent.includes('Выберите пациентов'),'All-off state is incorrect');
       document.querySelector('[data-action="enable-all-patients"]').click();assert(document.querySelectorAll('.column-header').length===10,'Enable all failed');
@@ -167,11 +169,11 @@ module.exports=async function runSmoke({app,window:mainWindow,smokeDir,root:ROOT
       document.querySelector('[data-action="goto-day"][data-date="'+source+'"]').click();
       document.querySelector('[data-action="copy-day"]').click();form=document.querySelector('#copy-day-form');assert(form.querySelector('[name="source"]').value===source&&form.querySelector('[name="date"]').value===target,'Weekly copy defaults incorrect');
       assert(form.querySelector('#copy-warning').hidden,'Empty day unnecessarily needs replacement confirmation');form.requestSubmit();assert(!document.querySelector('#modal').open,'Copy into prepared day failed');
-      let state=JSON.parse(window.ritmDesktop.storage.load().data);assert(state.days[target].appointments.length===state.days[source].appointments.length,'Appointments did not copy');assert(state.days[target].disabledPatientIds.includes(firstId),'Target patient participation changed');
+      let state=JSON.parse(window.ritmDesktop.storage.load().data);assert(state.days[target].appointments.length===state.days[source].appointments.filter(a=>a.patientId!==firstId).length&&!state.days[target].appointments.some(a=>a.patientId===firstId),'Appointments did not copy');assert(state.days[target].disabledPatientIds.includes(firstId),'Target patient participation changed');
       const originalTarget=JSON.stringify(state.days[target]),originalSource=JSON.stringify(state.days[source]);
       document.querySelector('[data-action="copy-day"]').click();form=document.querySelector('#copy-day-form');form.querySelector('[name="source"]').value=source;form.querySelector('[name="source"]').dispatchEvent(new Event('change'));form.querySelector('[name="date"]').value=target;form.querySelector('[name="date"]').dispatchEvent(new Event('change'));
       assert(!form.querySelector('#copy-warning').hidden&&document.querySelector('#modal [type="submit"]').disabled,'Filled day lacks confirmation');form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));assert(document.querySelector('#modal').open,'Unconfirmed copy ran');assert(JSON.stringify(JSON.parse(window.ritmDesktop.storage.load().data).days[target])===originalTarget,'Blocked copy mutated target');
-      form.querySelector('[name="replace"]').click();form.requestSubmit();state=JSON.parse(window.ritmDesktop.storage.load().data);assert(JSON.stringify(state.days[source])===originalSource,'Source day changed');assert(state.days[target].appointments.length===state.days[source].appointments.length,'Copy duplicated existing appointments');
+      form.querySelector('[name="replace"]').click();form.requestSubmit();state=JSON.parse(window.ritmDesktop.storage.load().data);assert(JSON.stringify(state.days[source])===originalSource,'Source day changed');assert(state.days[target].appointments.length===state.days[source].appointments.filter(a=>a.patientId!==firstId).length,'Copy duplicated existing appointments');
       document.querySelector('#date-picker').focus();document.querySelector('#date-picker').blur();document.body.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,ctrlKey:true,code:'KeyZ'}));state=JSON.parse(window.ritmDesktop.storage.load().data);assert(JSON.stringify(state.days[target])===originalTarget,'Ctrl+Z did not restore destination');
       document.body.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,ctrlKey:true,shiftKey:true,code:'KeyZ'}));state=JSON.parse(window.ritmDesktop.storage.load().data);assert(JSON.stringify(state.days[target])!==originalTarget,'Ctrl+Shift+Z did not redo copy');
       document.querySelector('[data-action="copy-day"]').click();form=document.querySelector('#copy-day-form');form.querySelector('[name="source"]').value=source;form.querySelector('[name="date"]').value=fresh;form.querySelector('[name="date"]').dispatchEvent(new Event('change'));form.requestSubmit();state=JSON.parse(window.ritmDesktop.storage.load().data);assert(state.days[fresh].disabledPatientIds.length===0&&state.days[fresh].appointments.length===state.days[source].appointments.length,'New destination not copied or patients not enabled');
@@ -201,13 +203,13 @@ module.exports=async function runSmoke({app,window:mainWindow,smokeDir,root:ROOT
       assert(input.value==='13:00','Unapplied draft changed time');popup.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,key:'Escape'}));assert(!document.querySelector('.time-popup:popover-open')&&input.value==='13:00','Escape did not cancel draft');
       input.closest('.time-control').querySelector('.time-trigger').click();popup=document.querySelector('.time-popup:popover-open');popup.querySelector('[data-part="minute"] [data-value="5"]').click();popup.querySelector('.time-picker-done').click();
       let state=JSON.parse(window.ritmDesktop.storage.load().data),date=document.querySelector('#date-picker').value;assert(state.days[date].bands[0].start===785&&state.days[date].bands[0].duration===30,'Inspector time did not commit');
-      input=document.querySelector('[data-field="start"]');const valid=input.value;input.value='13:60';assert(!input.checkValidity(),'Invalid typed minute accepted');input.value=valid;
+      input=document.querySelector('[data-field="start"]');assert(input.readOnly,'Time must only come from the picker');input.click();assert(document.querySelector('.time-popup:popover-open'),'Clicking the field must open the picker');input.click();document.querySelector('.time-popup:popover-open')?.hidePopover();
       document.querySelector('[data-action="day-settings"]').click();document.querySelector('.inspector [data-action="add-band"]').click();let form=document.querySelector('#add-band-form');assert(!form.querySelector('input[type="time"]'),'Modal still uses native time picker');
       form.querySelector('[name="start"]').closest('.time-control').querySelector('.time-trigger').click();popup=document.querySelector('.time-popup:popover-open');assert(popup&&popup.closest('#modal'),'Modal time picker not in modal');popup.querySelector('[data-part="minute"] [data-value="10"]').click();popup.querySelector('.time-picker-done').click();form.requestSubmit();assert(!document.querySelector('#modal').open,'Period form failed');
       state=JSON.parse(window.ritmDesktop.storage.load().data);assert(state.days[date].bands.at(-1).start===790,'Modal value was not submitted');
       document.querySelector('[data-action="export"]').click();input=document.querySelector('#export-start');input.closest('.time-control').querySelector('.time-trigger').click();popup=document.querySelector('.time-popup:popover-open');popup.querySelector('[data-part="minute"] [data-value="30"]').click();popup.querySelector('.time-picker-done').click();assert(input.value==='09:30'&&document.querySelector('.export-preview canvas'),'Export time picker failed');document.querySelector('#modal .modal-footer [data-action="close-modal"]').click();
       const axis=document.querySelector('.time-axis').getBoundingClientRect();for(const marker of document.querySelectorAll('.time-label')){const rect=marker.getBoundingClientRect(),text=marker.querySelector('span').getBoundingClientRect();assert(Math.abs(rect.top+rect.height/2-axis.top-parseFloat(marker.style.top))<1,'Time marker is not centered on tick');assert(Math.abs(text.top+text.height/2-rect.top-rect.height/2)<1,'Time text is not centered');}
-      const canvas=renderScheduleImage(state.days[date]),ctx=canvas.getContext('2d'),y=Math.round((148+(600-state.days[date].start)*1.6)*2),left=ctx.getImageData(20,y,1,1).data,gap=ctx.getImageData(72,y,1,1).data;assert(left[0]!==gap[0]||left[1]!==gap[1],'PNG hour line has no center gap');
+      const canvas=renderScheduleImage(state.days[date]),ctx=canvas.getContext('2d'),y=Math.round((142+(600-state.days[date].start)*1.6)*2),left=ctx.getImageData(20,y,1,1).data,gap=ctx.getImageData(72,y,1,1).data;assert(left[0]!==gap[0]||left[1]!==gap[1],'PNG hour line has no center gap');
       document.querySelector('.gutter-band').click();document.querySelector('[data-field="start"]').closest('.time-control').querySelector('.time-trigger').click();
     }
     if(${process.argv.includes('--smoke-editor-v050')}){
@@ -252,10 +254,16 @@ module.exports=async function runSmoke({app,window:mainWindow,smokeDir,root:ROOT
     return {url:location.href,patients:document.querySelectorAll('.column-header').length,bridge:true,autosave:true,png:true,nodeExposed:typeof window.require!=='undefined'};
   })()`,true);
   if(process.argv.includes('--smoke-instructor-selection'))await require('./verify-instructor-selection.cjs')({window:mainWindow});
+  if(process.argv.includes('--smoke-autofill'))await require('./verify-autofill.cjs')({window:mainWindow,out:smokeDir});
   if(process.argv.includes('--smoke-autofill-foundation'))await require('./verify-autofill-foundation.cjs')({window:mainWindow,out:smokeDir});
   if(process.argv.includes('--smoke-inspector-layout'))await require('./verify-inspector-layout.cjs')({window:mainWindow});
   if(process.argv.includes('--smoke-procedure-propagation'))await require('./verify-procedure-propagation.cjs')({window:mainWindow});
   if(process.argv.includes('--smoke-procedure-duration'))await require('./verify-procedure-duration.cjs')({window:mainWindow});
+  if(process.argv.includes('--smoke-procedure-card'))await require('./verify-procedure-card.cjs')({window:mainWindow,out:smokeDir});
+  if(process.argv.includes('--smoke-inspector-commit'))await require('./verify-inspector-commit.cjs')({window:mainWindow,out:smokeDir});
+  if(process.argv.includes('--smoke-monkey'))await require('./verify-monkey.cjs')({window:mainWindow,out:smokeDir});
+  if(process.argv.includes('--smoke-day-tools'))await require('./verify-day-tools.cjs')({window:mainWindow,out:smokeDir});
+  if(process.argv.includes('--smoke-column-drag'))await require('./verify-column-drag.cjs')({window:mainWindow,out:smokeDir});
   if(process.argv.includes('--smoke-delete-button'))await require('./verify-appointment-delete.cjs')({window:mainWindow});
   if(process.argv.includes('--smoke-window'))await require('./verify-window.cjs')({window:mainWindow,out:smokeDir});
   if(process.argv.includes('--smoke-tutorial'))await require('./verify-tutorial.cjs')({window:mainWindow,out:smokeDir});

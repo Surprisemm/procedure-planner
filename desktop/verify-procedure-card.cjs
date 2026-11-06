@@ -1,0 +1,152 @@
+const fs=require('node:fs');
+const path=require('node:path');
+module.exports=async({window,out})=>{
+  const step=code=>window.webContents.executeJavaScript(`(async()=>{
+    const assert=(value,message)=>{if(!value)throw Error(message)},read=()=>JSON.parse(window.ritmDesktop.storage.load().data);
+    const choose=e=>{const r=e.getBoundingClientRect();e.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,button:0,clientX:r.left+15,clientY:r.top+15}));document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));};
+    const undo=()=>document.body.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,ctrlKey:true,code:'KeyZ'}));
+    ${code}
+  })()`,true);
+  await step(`
+    document.querySelector('[data-field="start"]').dispatchEvent(new Event('change',{bubbles:true}));
+    assert([...document.querySelectorAll('.procedure-card-actions')].filter(e=>getComputedStyle(e).visibility==='visible').length<=1,'Buttons visible without hover or selection');
+    choose(document.querySelector('[data-procedure]'));
+    const actions=document.querySelectorAll('.procedure-card.selected .card-action');assert(actions.length===2,'Selected card must show two buttons');
+    const card=document.querySelector('.procedure-card.selected').getBoundingClientRect(),box=document.querySelector('.procedure-card-actions').getBoundingClientRect();
+    assert(box.right<=card.right&&box.top>=card.top&&box.right>card.right-10&&box.top<card.top+10,'Buttons must sit in the top right corner');
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  `);
+  if(out){fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,'procedure-card.png'),(await window.webContents.capturePage()).toPNG());}
+  await step(`
+    const before=read().procedures,source=before[0];
+    const down=document.querySelector('.card-action');const r=down.getBoundingClientRect();
+    down.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,button:0,clientX:r.left+5,clientY:r.top+5}));
+    document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:r.left+60,clientY:r.top-60}));
+    document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));
+    assert(!document.body.classList.contains('dragging'),'Button press must not start a drag');
+    document.querySelector('.procedure-card.selected [data-action=duplicate]').click();
+    let list=read().procedures;assert(list.length===before.length+1,'Copy was not added');
+    const copy=list[1];assert(copy.id!==source.id&&copy.name===source.name+' (копия)'&&copy.duration===source.duration&&copy.color===source.color&&JSON.stringify(copy.instructors)===JSON.stringify(source.instructors),'Copy must match and sit next to the source');
+    assert(document.querySelector('.procedure-card.selected').dataset.procedure===copy.id,'Copy must become selected');
+    undo();assert(read().procedures.length===before.length,'Duplicate must undo');
+    choose(document.querySelector('[data-procedure]'));
+    const placed=read().days[document.querySelector('#date-picker').value].appointments.length;
+    document.querySelector('.procedure-card.selected .card-delete').click();
+    assert(document.querySelector('#modal').open,'Delete must ask for confirmation');
+    assert(read().procedures.length===before.length,'Nothing is deleted before confirmation');
+    document.querySelector('#modal [data-action=confirm-modal]').click();
+    assert(read().procedures.length===before.length-1&&!read().procedures.some(p=>p.id===source.id),'Procedure was not deleted');
+    assert(read().days[document.querySelector('#date-picker').value].appointments.length===placed,'Placed appointments must stay');
+    assert(!document.querySelector('.procedure-card.selected'),'Selection must clear after deleting');
+    undo();assert(read().procedures.some(p=>p.id===source.id),'Delete must undo');
+  `);
+  // Real mouse: buttons follow the cursor and act on the hovered card.
+  const mouse=async(type,x,y,extra={})=>{window.webContents.sendInputEvent({type,x:Math.round(x),y:Math.round(y),...extra});await new Promise(r=>setTimeout(r,120));};
+  const measure=code=>window.webContents.executeJavaScript(code);
+  const click=async(x,y)=>{await mouse('mouseMove',x,y);await mouse('mouseDown',x,y,{button:'left',clickCount:1});await mouse('mouseUp',x,y,{button:'left',clickCount:1});};
+  const rect=selector=>measure(`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()`);
+  const shown=selector=>measure(`getComputedStyle(document.querySelector(${JSON.stringify(selector)})).visibility==='visible'`);
+  const check=(value,message)=>{if(!value)throw Error(message);};
+  await step(`document.querySelector('.workspace-heading').click();document.querySelector('.procedure-list').scrollLeft=0;document.querySelector('.schedule-scroll').scrollTop=0;`);
+  const second='.procedure-card:nth-child(2)',secondButton=second+' [data-action=duplicate]';
+  let point=await rect(second);
+  await mouse('mouseMove',point.x,point.y+10);
+  check(await shown(secondButton),'Hover must reveal library buttons');
+  const widths=()=>measure(`JSON.stringify([...document.querySelectorAll('.procedure-card')].map(e=>e.getBoundingClientRect().width))`);
+  const hovered=await widths();
+  check(new Set(JSON.parse(hovered)).size===1,'Library cards must share one width: '+hovered);
+  check(await measure(`(()=>{const c=document.querySelector(${JSON.stringify(second)}),t=c.querySelector('strong'),a=c.querySelector('.procedure-card-actions'),range=document.createRange();range.selectNodeContents(t);return range.getBoundingClientRect().right<=a.getBoundingClientRect().left||t.scrollWidth>t.clientWidth;})()`),'Name must not run under the buttons');
+  await mouse('mouseMove',5,5);
+  check(!(await shown(secondButton)),'Library buttons must hide when the cursor leaves');
+  check((await widths())===hovered,'Hover must not change card width');
+  const countBefore=await measure('JSON.parse(window.ritmDesktop.storage.load().data).procedures.length');
+  point=await rect(second);await mouse('mouseMove',point.x,point.y+10);
+  point=await rect(secondButton);await click(point.x,point.y);
+  const library=await measure(`(()=>{const s=JSON.parse(window.ritmDesktop.storage.load().data);return {count:s.procedures.length,copy:s.procedures[2].name,source:s.procedures[1].name};})()`);
+  check(library.count===countBefore+1&&library.copy===library.source+' (копия)','Hover button must duplicate its own card');
+  await step('undo();');
+  const target=await measure(`(()=>{const a=document.querySelector('.appointment');const r=a.getBoundingClientRect();return {id:a.dataset.appointment,x:r.left+r.width/2,y:r.top+r.height/2};})()`);
+  const group='[data-appointment="'+target.id+'"]';
+  const buttons=g=>`document.querySelector(${JSON.stringify(g)}).closest('.appointment-group')`;
+  await mouse('mouseMove',target.x,target.y);
+  check(await measure(`(()=>{const g=${buttons(group)};return ['.appointment-delete','.appointment-lock'].every(s=>getComputedStyle(g.querySelector(s)).visibility==='visible');})()`),'Hover must reveal table buttons');
+  const trash=await measure(`(()=>{const r=${buttons(group)}.querySelector('.appointment-delete').getBoundingClientRect();return {x:r.left+10,y:r.top+10};})()`);
+  await mouse('mouseMove',trash.x,trash.y);
+  check(await measure(`getComputedStyle(${buttons(group)}.querySelector('.appointment-lock')).visibility==='visible'`),'Buttons must stay while the cursor is on one of them');
+  await click(trash.x,trash.y);
+  check(await measure(`(()=>{const s=JSON.parse(window.ritmDesktop.storage.load().data),d=document.querySelector('#date-picker').value;return !s.days[d].appointments.some(a=>a.id===${JSON.stringify(target.id)});})()`),'Hover trash must delete its own card');
+  await step('undo();');
+  await mouse('mouseMove',5,5);
+  // Several instructors with their own colours.
+  await step(`
+    choose(document.querySelector('[data-procedure]'));
+    const add=()=>document.querySelector('[data-action=add-proc-instructor]').click();
+    add();assert(document.querySelector('#toast').textContent.includes('Сначала добавьте'),'Empty directory must explain itself');
+    const s=read();
+    document.querySelector('[data-action="sidebar-tab"][data-tab="instructors"]').click();
+    document.querySelector('[data-action="batch-instructors"]').click();
+    const form=document.querySelector('#instructor-form');form.querySelector('textarea').value=['Юлия','Олимпиада','Наталья'].join(String.fromCharCode(10));form.requestSubmit();
+    document.querySelector('[data-action="sidebar-tab"][data-tab="patients"]').click();
+    choose(document.querySelector('[data-procedure]'));
+    add();add();
+    let p=read().procedures[0];assert(p.instructors.length===2,'Second instructor missing');
+    assert(p.instructors[1].color===p.color,'A new instructor starts with the procedure colour');
+    assert(document.querySelectorAll('.proc-instructor').length===2&&document.querySelectorAll('.proc-instructor-color').length===2,'Every instructor needs a colour field');
+    for(const line of document.querySelectorAll('.proc-instructor')){const a=line.querySelector('select').getBoundingClientRect(),b=line.querySelector('.color-trigger').getBoundingClientRect();assert(Math.abs((a.top+a.height/2)-(b.top+b.height/2))<2&&b.left>=a.right,'Instructor and colour must share a line');assert(Math.abs(b.height-a.height)<2,'Controls must have equal height');}
+    const inspector=document.querySelector('.inspector');assert(inspector.scrollWidth<=inspector.clientWidth,'Inspector overflows');
+    const firstColor=document.querySelector('[data-proc-instructor-color="0"]'),background=document.querySelector('[data-field=color]');assert(firstColor.value===background.value,'First colour must show the background');
+    firstColor.value='#abcdef';firstColor.dispatchEvent(new Event('change',{bubbles:true}));
+    assert(read().procedures[0].color==='#abcdef'&&document.querySelector('[data-field=color]').value==='#abcdef','First colour must change the background');
+    const back=document.querySelector('[data-field=color]');back.value='#f7df88';back.dispatchEvent(new Event('change',{bubbles:true}));
+    assert(document.querySelector('[data-proc-instructor-color="0"]').value==='#f7df88','Background must change the first colour');
+    const color=document.querySelector('[data-proc-instructor-color="1"]');color.value='#123456';color.dispatchEvent(new Event('change',{bubbles:true}));
+    p=read().procedures[0];assert(p.instructors[1].color==='#123456','Colour was not saved');
+    document.querySelector('[data-action=place-procedure]').click();document.querySelector('#place-form').requestSubmit();
+    const date=document.querySelector('#date-picker').value;let a=read().days[date].appointments.at(-1);
+    assert(a.instructorId===p.instructors[0].instructorId&&a.color===p.color,'New appointment must use the first instructor');
+    const field=document.querySelector('[data-field=instructorId]');assert(field&&field.options.length===3,'Appointment needs an instructor choice');
+    field.value=p.instructors[1].instructorId;field.dispatchEvent(new Event('change',{bubbles:true}));
+    a=read().days[date].appointments.at(-1);assert(a.instructorId===p.instructors[1].instructorId&&a.color==='#123456','Switching instructor must switch colour');
+    undo();undo();
+  `);
+  await step(`choose(document.querySelector('[data-procedure]'));await new Promise(r=>setTimeout(r,250));`);
+  if(out)fs.writeFileSync(path.join(out,'procedure-instructors.png'),(await window.webContents.capturePage()).toPNG());
+  // Dragging within the library: cards slide aside, the order changes, undo restores.
+  await step(`
+    const list=document.querySelector('.procedure-list');list.scrollLeft=0;
+    const cards=[...document.querySelectorAll('.procedure-card')],before=read().procedures.map(p=>p.id),r=cards[0].getBoundingClientRect(),step=cards[1].getBoundingClientRect().left-r.left;
+    assert(cards.length>=4,'Need cards to reorder');
+    const at=(type,x,y,target=document)=>target.dispatchEvent(new PointerEvent(type,{bubbles:true,button:0,clientX:x,clientY:y}));
+    const y=r.top+r.height-6;
+    at('pointerdown',r.left+20,y,cards[0]);
+    at('pointermove',r.left+20+step*2+4,y);
+    assert(document.body.classList.contains('reordering'),'Reorder mode did not start');
+    const now=[...document.querySelectorAll('.procedure-card')];
+    assert(now[1].style.transform==='translateX('+(-step)+'px)'&&now[2].style.transform==='translateX('+(-step)+'px)','Cards must slide aside: '+now[1].style.transform);
+    assert(now[3].style.transform==='','Far cards must stay');
+    assert(getComputedStyle(now[1]).transitionDuration!=='0s','Slide must animate');
+    assert(document.querySelector('#drag-preview').hidden,'No placement preview over the library');
+    await new Promise(r=>setTimeout(r,250));
+  `);
+  if(out)fs.writeFileSync(path.join(out,'library-reorder.png'),(await window.webContents.capturePage()).toPNG());
+  await step(`
+    const before=read().procedures.map(p=>p.id);
+    document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));
+    const after=read().procedures.map(p=>p.id);
+    assert(after[2]===before[0]&&after[0]===before[1]&&after[1]===before[2]&&after.length===before.length,'Order did not change');
+    assert([...document.querySelectorAll('.procedure-card')][2].dataset.procedure===before[0],'Library not redrawn');
+    undo();assert(JSON.stringify(read().procedures.map(p=>p.id))===JSON.stringify(before),'Reorder must undo');
+    // Leaving the library for the schedule still places the procedure.
+    await new Promise(r=>setTimeout(r,250));
+    const count=read().days[document.querySelector('#date-picker').value].appointments.length;
+    const card=document.querySelector('.procedure-card'),c=card.getBoundingClientRect(),lane=document.querySelector('[data-lane]').getBoundingClientRect(),scroll=document.querySelector('.schedule-scroll').getBoundingClientRect();
+    card.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,button:0,clientX:c.left+20,clientY:c.top+20}));
+    document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:c.left+60,clientY:c.top+20}));
+    document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:lane.left+40,clientY:scroll.top+200}));
+    assert(![...document.querySelectorAll('.procedure-card')].some(e=>e.style.transform),'Cards must return when leaving the library');
+    document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:lane.left+40,clientY:scroll.top+200}));
+    assert(read().days[document.querySelector('#date-picker').value].appointments.length===count+1,'Drop on the schedule must place the procedure');
+    undo();
+  `);
+  console.log('PROCEDURE_CARD_VERIFIED');
+};

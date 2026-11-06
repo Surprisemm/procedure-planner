@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const {pathToFileURL}=require('node:url');
 const ROOT=path.resolve(__dirname,'..');
 const APP_URL='ritm://app/index.html';
-const FILES=new Set(['assets/tutorial/schedule.png','assets/tutorial/patients.png','assets/tutorial/library.png','assets/tutorial/days.png','assets/tutorial/inspector.png','assets/tutorial/export.png','index.html','app.js','domain.mjs','export.mjs','styles.css','time-picker.mjs','desktop/icon.svg','color-picker.mjs','text-editors.mjs','presentation.mjs','drag-scroll.mjs']);
+const FILES=new Set([...['schedule','patients','instructors','library','procedure','library-drag','days','inspector','export','autofill-button','autofill-result','autofill-day','autofill-procedures','autofill-rules','autofill-links','autofill-groups','autofill-locks','autofill-partial','autofill-report'].map(name=>`assets/tutorial/${name}.png`),'index.html','app.js','domain.mjs','autofill.mjs','export.mjs','styles.css','time-picker.mjs','desktop/icon.svg','color-picker.mjs','text-editors.mjs','presentation.mjs','drag-scroll.mjs']);
 app.setName('Расписание процедур');
 app.setAppUserModelId('ru.procedureplanner.desktop');
 protocol.registerSchemesAsPrivileged([{scheme:'ritm',privileges:{standard:true,secure:true,supportFetchAPI:true}}]);

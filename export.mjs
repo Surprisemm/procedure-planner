@@ -14,7 +14,7 @@ function styledBox(ctx,value,x,y,w,h,style,options={}){textBox(ctx,value,x,y,w,h
 export function renderScheduleImage(day,{scale=2,start=day.start,end=Math.min(1439,day.end),columns=visibleColumns(day)}={}){
   columns=columns.filter(c=>isPatientEnabled(day,c.patientId));
   const gutter=TIME_GUTTER,titleH=54,headH=78,axisInset=10,ppm=1.6;
-  const width=gutter+columns.reduce((s,c)=>s+c.width,0),height=titleH+headH+axisInset+(end-start)*ppm+36;
+  const width=gutter+columns.reduce((s,c)=>s+c.width,0),height=titleH+headH+axisInset+(end-start)*ppm+1;
   if(end<=start||start<0||end>1440)throw Error('Укажите корректный диапазон времени');
   if(width*scale>16000||height*scale>16000||width*height*scale*scale>80000000)throw Error('Слишком большое изображение. Уменьшите масштаб или разделите колонки.');
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(width*scale);canvas.height=Math.ceil(height*scale);
@@ -44,6 +44,6 @@ export function renderScheduleImage(day,{scale=2,start=day.start,end=Math.min(14
   }
   for(const {band:b,label:l,top:relativeTop} of labels){const y=top+relativeTop;ctx.fillStyle=b.color;ctx.fillRect(0,y,gutter,l.height);styledBox(ctx,b.name,2,y+2,gutter-4,l.height-l.timeSize-6,l.style,{color:'#59616d'});textBox(ctx,`${hm(b.start)}–${hm(b.start+b.duration)}`,2,y+l.height-l.timeSize-4,gutter-4,l.timeSize+2,{size:l.timeSize,color:'#59616d'});}
   ctx.strokeStyle='#d9e0e2';ctx.lineWidth=1;x=gutter;ctx.beginPath();ctx.moveTo(0,titleH);ctx.lineTo(width,titleH);ctx.moveTo(gutter,top);ctx.lineTo(width,top);for(const col of columns){ctx.moveTo(x,titleH);ctx.lineTo(x,top+bodyH);x+=col.width;}ctx.moveTo(width-.5,titleH);ctx.lineTo(width-.5,top+bodyH);ctx.moveTo(0,top+bodyH);ctx.lineTo(width,top+bodyH);ctx.stroke();
-  textBox(ctx,`${columns.length} пациентов · ${hm(start)}–${hm(end)}`,12,height-30,width-24,24,{size:10,color:'#7f8389',align:'left'});return canvas;
+  return canvas;
 }
 export async function downloadBlob(blob,name){if(window.ritmDesktop)return window.ritmDesktop.saveFile({name,type:blob.type==='image/png'?'png':'json',bytes:new Uint8Array(await blob.arrayBuffer())});const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);return {ok:true};}

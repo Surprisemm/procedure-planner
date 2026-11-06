@@ -1,3 +1,4 @@
+import {exportEndTime as exportEndForTest,procedureDurationError} from '../domain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {newProject,makeDay,durationFor,overlaps,validatePlacement,issuesFor,layoutAppointments,validateProject,clone,minutes,upgradeDefaultPeriods} from '../domain.mjs';
@@ -59,4 +60,19 @@ test('time parsing rejects impossible times and keeps minute precision',()=>{ass
 test('invalid saved template and impossible calendar dates are rejected',()=>{
   const p=newProject();p.templates={saturday:{start:600,end:500,step:5,defaultDuration:45,bands:[]}};assert.throws(()=>validateProject(p));
   const q=newProject();q.days={'2026-02-30':{...Object.values(q.days)[0],date:'2026-02-30'}};assert.throws(()=>validateProject(q));
+});
+
+test('exported image ends with the last procedure of the patients shown that day',()=>{
+  const day={end:1440,disabledPatientIds:['off'],appointments:[{patientId:'on',start:540,duration:55},{patientId:'on',start:990,duration:55},{patientId:'off',start:1300,duration:60}]};
+  assert.equal(exportEndForTest(day),1045);
+  assert.equal(exportEndForTest({...day,appointments:[]}),1439,'an empty day falls back to the canvas');
+  assert.equal(exportEndForTest({end:1050,appointments:[]}),1050);
+  assert.equal(exportEndForTest({end:1440,appointments:[{patientId:'on',start:1400,duration:40}]}),1439,'the time field cannot show 24:00');
+});
+
+test('procedure duration must fit the grid step',()=>{
+  for(const [value,step] of [[50,5],[60,15],[480,5],[5,5],[7,1]])assert.equal(procedureDurationError(value,step),null);
+  assert.match(procedureDurationError(52,5),/кратна шагу сетки: 5/);
+  assert.match(procedureDurationError(55,15),/кратна шагу сетки: 15/);
+  for(const [value,step] of [[0,5],[3,5],[485,5],[12.5,5],[NaN,5]])assert.match(procedureDurationError(value,step),/от \d+ до 480/);
 });

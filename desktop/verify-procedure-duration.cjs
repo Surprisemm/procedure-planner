@@ -14,9 +14,15 @@ module.exports=async({window})=>{
     document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:lane.left+50,clientY:sc.top+176}));document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));
     assert(read().days[document.querySelector('#date-picker').value].appointments.at(-1).duration===50,'Dragged procedure did not keep 50 minutes');
     form=open();form.querySelector('[name=name]').value='Тест: 45 минут';const duration=form.querySelector('[name=duration]'),count=read().procedures.length;
-    for(const value of ['','0','481','12.5']){duration.value=value;form.requestSubmit();assert(document.querySelector('#modal').open&&read().procedures.length===count,'Invalid duration accepted');}
+    for(const value of ['','0','481','12.5','52']){duration.value=value;form.requestSubmit();assert(document.querySelector('#modal').open&&read().procedures.length===count,'Invalid duration accepted');}
+    assert(document.querySelector('#modal-error').textContent.includes('кратна шагу'),'Step error must explain itself');assert(duration.step==='5','Form spinner must follow the grid step');
     duration.value='45';form.requestSubmit();assert(read().procedures.at(-1).duration===45,'Custom duration ignored');
     assert(JSON.stringify(read().procedures.slice(0,original.length))===JSON.stringify(original),'Existing library durations changed');
+    let field=document.querySelector('[data-field=duration]');assert(field.step==='5','Inspector spinner must follow the grid step');
+    const saved=read().procedures.at(-1).duration;field.value='52';field.dispatchEvent(new Event('change',{bubbles:true}));
+    assert(read().procedures.at(-1).duration===saved&&document.querySelector('[data-field=duration]').value===String(saved),'Inspector accepted a duration off the grid');
+    assert(document.querySelector('#toast').textContent.includes('кратна шагу'),'Inspector must explain the rejection');
+    field=document.querySelector('[data-field=duration]');field.value='60';field.dispatchEvent(new Event('change',{bubbles:true}));assert(read().procedures.at(-1).duration===60,'Inspector rejected a valid duration');
     open();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   })()`);
   console.log('NEW_PROCEDURE_DURATION_VERIFIED');
