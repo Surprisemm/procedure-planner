@@ -2,7 +2,7 @@ import {FONTS,fontCss} from './presentation.mjs';
 export function readTextStyles(form){return Object.fromEntries([...form.querySelectorAll('[data-text-key]')].filter(e=>e.dataset.textCustomized==='true').map(e=>[e.dataset.textKey,JSON.parse(e.dataset.textStyle)]));}
 export function setupTextEditors(container,{getStyle=()=>({}),onChange=null,openKey='',getAlignment=()=>null,onAlignmentChange=null}={}){
   for(const input of container.querySelectorAll('input[type="text"]:not(.time-input),textarea')){
-    if(input.id==='patient-search'||input.closest('.color-popup')||input.dataset.textKey)continue;
+    if(input.hasAttribute('data-plain-text')||input.id==='patient-search'||input.id==='instructor-search'||input.closest('.color-popup')||input.dataset.textKey)continue;
     const key=input.dataset.field||input.name;if(!key||key==='note'||key==='scheduleName'||input.closest('#stay-form'))continue;
     const style={fontFamily:'Segoe UI',fontSize:12,bold:false,italic:false,...getStyle(key)};input.dataset.textKey=key;
     const panel=document.createElement('details');panel.className='text-format';panel.open=openKey===key;

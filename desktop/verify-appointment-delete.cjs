@@ -1,0 +1,35 @@
+module.exports=async({window})=>{
+  await window.webContents.executeJavaScript(`(async()=>{
+    const assert=(value,message)=>{if(!value)throw Error(message)};
+    const read=()=>JSON.parse(window.ritmDesktop.storage.load().data);
+    const date=document.querySelector('#date-picker').value;
+    document.querySelector('[data-field="start"]').dispatchEvent(new Event('change',{bubbles:true}));
+    const choose=element=>{const r=element.getBoundingClientRect();element.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,button:0,clientX:r.left+15,clientY:r.top+15}));document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));};
+    assert(!document.querySelector('.appointment-delete'),'Delete button visible without selection');
+    const original=read(),id=original.days[date].appointments[0].id;
+    choose(document.querySelector('[data-appointment="'+id+'"]'));
+    let button=document.querySelector('.appointment-delete'),block=document.querySelector('.appointment.selected');
+    assert(button&&document.querySelectorAll('.appointment-delete').length===1,'Selected block delete button missing');
+    const b=button.getBoundingClientRect(),r=block.getBoundingClientRect();
+    assert(Math.abs(r.right-b.right)<=3&&Math.abs(b.top-r.top)<=3,'Delete button not at top right');
+    button.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,button:0,clientX:b.left+8,clientY:b.top+8}));
+    document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:b.left+18,clientY:b.top+18}));
+    assert(document.querySelector('#drag-preview').hidden&&!document.body.classList.contains('dragging'),'Trash button starts dragging');
+    document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));button.click();
+    const removed=read();assert(!removed.days[date].appointments.some(a=>a.id===id),'Wrong assignment removed');
+    assert(removed.days[date].appointments.length===original.days[date].appointments.length-1,'Multiple assignments removed');
+    assert(JSON.stringify(removed.procedures)===JSON.stringify(original.procedures),'Delete modified the library');
+    assert(!document.querySelector('.appointment-delete')&&document.querySelector('[data-field="scheduleName"]'),'Deletion did not restore day inspector');
+    document.body.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,ctrlKey:true,code:'KeyZ'}));
+    assert(JSON.stringify(read().days[date].appointments)===JSON.stringify(original.days[date].appointments),'Undo did not restore exact assignment');
+    choose(document.querySelector('[data-appointment="'+id+'"]'));
+    let duration=document.querySelector('[data-field="duration"]');duration.value='5';duration.dispatchEvent(new Event('change',{bubbles:true}));
+    button=document.querySelector('.appointment-delete');const small=button.getBoundingClientRect();
+    assert(small.height===20&&document.elementFromPoint(small.left+10,small.top+10)?.closest('.appointment-delete'),'Short appointment clips delete button');
+    duration=document.querySelector('[data-field="duration"]');duration.value=original.days[date].appointments[0].duration;duration.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('.workspace-heading').click();assert(!document.querySelector('.appointment-delete'),'Clearing selection leaves delete button');
+    choose(document.querySelector('[data-appointment="'+id+'"]'));
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  })()`);
+  console.log('APPOINTMENT_DELETE_VERIFIED');
+};

@@ -36,6 +36,5 @@ const sizes=[16,20,24,32,40,48,64,128,256],images=sizes.map(raster),directory=Bu
 for(let i=0;i<sizes.length;i++){const entry=6+i*16;directory[entry]=directory[entry+1]=sizes[i]===256?0:sizes[i];directory.writeUInt16LE(1,entry+4);directory.writeUInt16LE(32,entry+6);directory.writeUInt32LE(images[i].length,entry+8);directory.writeUInt32LE(offset,entry+12);offset+=images[i].length;}
 const ico=Buffer.concat([directory,...images]);
 fs.writeFileSync(path.join(destination,'icon.ico'),ico);
-fs.writeFileSync(path.join(destination,'icon-blue.ico'),ico);
 fs.writeFileSync(path.join(destination,'icon-512.png'),raster(512));
 console.log('Иконка: SVG, PNG 512×512, ICO 16–256 px');

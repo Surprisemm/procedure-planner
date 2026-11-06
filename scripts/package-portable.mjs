@@ -8,9 +8,9 @@ const artifacts=await build({
   config:{
     appId:'ru.procedureplanner.desktop',productName:'Расписание процедур',
     directories:{output:path.join(root,'release')},
-    artifactName:'Расписание процедур 1.0.${ext}',
+    artifactName:'${productName} ${version}.${ext}',
     win:{icon:path.join(root,'desktop','icon.ico'),executableName:'Schedule',signAndEditExecutable:false},
-    portable:{requestExecutionLevel:'user',unpackDirName:'procedure-planner-1.0.0'}
+    portable:{requestExecutionLevel:'user'}
   }
 });
 for(const artifact of artifacts)console.log('Готовый переносимый EXE:',artifact);

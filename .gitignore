@@ -1,23 +1,15 @@
 node_modules/
 release/
 artifacts/
-Скриншоты интерфейса/
 Тестовое расписание/
 *.exe
 *.lnk
-*.cmd
 *.log
 .env
 .env.*
 !.env.example
 .DS_Store
 Thumbs.db
-Расписание процедур 1.0 — запуск.txt
-Расположение файлов.json
-/docs/*
-!/docs/images/
-/docs/images/*
-!/docs/images/schedule.png
-/desktop/icon-blue.ico
-/server.mjs
-/launch.mjs
+
+# Local project files and user backups.
+/Проекты/
