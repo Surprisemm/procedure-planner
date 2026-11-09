@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeDay,validatePlacement} from '../domain.mjs';
-import {buildSlots,normalizeSettings,planDay,poolKey,procedurePools} from '../autofill.mjs';
+import {buildSlots,describeCause,describeLoad,estimateLoad,normalizeSettings,planDay,poolKey,procedurePools} from '../autofill.mjs';
 
 const random=seed=>()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};
 const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
@@ -21,7 +21,7 @@ function scenario(seed){
   const settings=normalizeSettings(null,procedures,day.bands);
   if(chance(.3))settings.blockedBands['Обед']=false;
   if(chance(.5))settings.blockedBands['Консилиум']=true;
-  settings.start=pick([480,540,600]);settings.end=pick([900,1050,1200]);settings.slot=pick([45,60,60,60,90]);
+  settings.start=pick([480,540,600]);day.workEnd=pick([900,1050,1200]);settings.slot=pick([45,60,60,60,90]);
   for(const pool of procedurePools(procedures)){
     const row=settings.rows[pool.key];
     row.enabled=chance(.85);row.grid=chance(.6);row.gap=pick([0,5,10,15]);
@@ -134,6 +134,10 @@ function check(s){
     const old=kept.filter(a=>worker(a)===id),all=[...old,...placed.filter(a=>worker(a)===id)];
     if(returns(all)>returns(old))fail(`instructor ${id} returns: ${returns(old)} -> ${returns(all)}`);
   }
+  for(const item of plan.report.unplaced){const d=describeCause(item);if(!d.text||!d.hint||!item.cause)fail(`no cause for ${item.key}`);}
+  const load=estimateLoad({procedures,day,settings,links,groupList});
+  if(load&&plan.report.unplaced.length===0&&load.patients.lost)fail('estimate says lost, but everything was placed');
+  if(load)describeLoad(load);
   assert.equal(plan.report.placed,plan.place.length);
   assert.equal(plan.report.total,plan.place.length+plan.report.unplaced.length);
 }

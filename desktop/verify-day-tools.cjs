@@ -41,6 +41,32 @@ module.exports=async({window,out})=>{
   `);
   await shot('zoom-50.png');
   await step(`
+    const line=()=>document.querySelector('#lanes .workday-end'),position=()=>Math.round(line().getBoundingClientRect().top-document.querySelector('#lanes').getBoundingClientRect().top);
+    assert(line(),'Workday line missing');
+    const d=read().days[date()];
+    for(const z of [0.5,1,2]){zoom(z);assert(Math.abs(position()-(Math.min(1050,d.end)-d.start)*1.4*z)<3,'Line position at '+z+': '+position());}
+    zoom(1);
+    assert(getComputedStyle(line()).pointerEvents==='none','Line must not catch clicks');
+    const image=()=>{document.querySelector('[data-action=export]').click();document.querySelector('#export-end').value='18:00';document.querySelector('#export-end').dispatchEvent(new Event('change',{bubbles:true}));const url=document.querySelector('#export-preview canvas').toDataURL();document.querySelector('#modal [data-action=close-modal]').click();return url;};
+    const before=image(),top=position(),setEnd=value=>{document.querySelector('.workspace-heading').click();const el=document.querySelector('.inspector [data-field=workEnd]');assert(el,'Inspector needs the working day end');el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}));};
+    document.querySelector('.workspace-heading').click();
+    const fields=[...document.querySelectorAll('.inspector [data-field]')].map(e=>e.dataset.field);assert(fields.indexOf('workEnd')===fields.indexOf('start')+1,'Field must follow the grid start: '+fields);
+    assert(document.querySelector('.inspector [data-field=workEnd]').value==='17:30','Default end');
+    setEnd('16:00');
+    assert(read().days[date()].workEnd===960,'End not saved');
+    assert(position()<top&&Math.abs(position()-(960-d.start)*1.4)<3,'Line must follow the property: '+position());
+    assert(image()===before,'PNG must not change with the line');
+    document.querySelector('[data-action=autofill]').click();
+    assert(document.querySelector('#autofill-form .af-readonly').textContent==='16:00'&&!document.querySelector('#autofill-form [name=end]'),'Autofill must take the end from the day');
+    document.querySelector('#modal [data-action=close-modal]').click();
+    setEnd('20:00');
+    assert(line()&&Math.abs(position()-(1200-read().days[date()].start)*1.4)<3,'The grid must grow to show a later end: '+position());
+    setEnd('08:00');assert(read().days[date()].workEnd===1200&&document.querySelector('#toast').textContent.includes('позже начала'),'End before the start must be rejected');
+    undo();undo();
+    assert(read().days[date()].workEnd===1050,'Undo must restore the end');
+  `);
+  await shot('workday-line.png');
+  await step(`
     zoom(1);
     const toolbar=document.querySelector('.toolbar'),button=document.querySelector('.toolbar [data-action=clear-day]');
     assert(button&&button.textContent.includes('Очистить расписание'),'Clear button missing');

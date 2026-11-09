@@ -76,3 +76,11 @@ test('procedure duration must fit the grid step',()=>{
   assert.match(procedureDurationError(55,15),/кратна шагу сетки: 15/);
   for(const [value,step] of [[0,5],[3,5],[485,5],[12.5,5],[NaN,5]])assert.match(procedureDurationError(value,step),/от \d+ до 480/);
 });
+
+test('the working day end is a day property and copies with the day',()=>{
+  const p=newProject(false),date=Object.keys(p.days)[0],day=p.days[date];
+  assert.equal(day.workEnd,1050);day.workEnd=960;validateProject(p);
+  assert.equal(clone(day).workEnd,960);
+  day.workEnd=0;assert.throws(()=>validateProject(p),/рабочего дня/);day.workEnd=1500;assert.throws(()=>validateProject(p),/рабочего дня/);
+  delete day.workEnd;validateProject(p);
+});

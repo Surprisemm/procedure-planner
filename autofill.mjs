@@ -1,6 +1,6 @@
 // Automatic schedule generator. No DOM here: the dialog in app.js supplies the
 // settings and applies the returned plan as one undoable transaction.
-import {durationFor,minutes,visibleColumns,workKey} from './domain.mjs';
+import {durationFor,hm,minutes,visibleColumns,workKey,workdayEnd} from './domain.mjs';
 
 export const DEFAULT_START=540;
 export const DEFAULT_END=1050;
@@ -75,7 +75,7 @@ function selectedKeys(settings,links){
 // Returns messages that must be fixed before generation can start.
 export function checkSettings(settings,procedures,day,links=[]){
   const errors=[],keys=selectedKeys(settings,links);
-  if(!Number.isInteger(settings.start)||!Number.isInteger(settings.end)||settings.end<=settings.start)errors.push('Укажите корректные начало и конец рабочего дня');
+  if(!Number.isInteger(settings.start)||settings.start>=workdayEnd(day))errors.push('Начало должно быть раньше конца рабочего дня');
   if(!Number.isInteger(settings.slot)||settings.slot<day.step||settings.slot>480)errors.push(`Длина слота должна быть от ${day.step} до 480 минут`);
   if(!keys.size)errors.push('Отметьте хотя бы одну процедуру');
   for(const link of links)if(!link.a||!link.b||link.a===link.b)errors.push('В связке должны быть две разные процедуры');
@@ -109,7 +109,9 @@ export function buildSlots(start,slot,blocked,step){
   return result;
 }
 
-function context({procedures,day,settings,links,groupList}){
+function context({procedures,day,settings:raw,links,groupList}){
+  // The working day ends where the day's own properties say.
+  const settings={...raw,end:workdayEnd(day)};
   const pools=new Map(procedurePools(procedures).map(pool=>[pool.key,pool]));
   const byId=new Map(procedures.map(p=>[p.id,p]));
   const keyOf=a=>poolKey(byId.get(a.procedureId)?.name??a.text);
@@ -162,29 +164,31 @@ function peakAt(items,start,end){
   }
   return peak;
 }
-function canPlace(ctx,state,patientId,template,start){
+function canPlace(ctx,state,patientId,template,start){return placementProblem(ctx,state,patientId,template,start)===null;}
+function placementProblem(ctx,state,patientId,template,start){
   const {key,duration,instructor}=template,end=start+duration,row=ctx.settings.rows[key],gap=gapFor(ctx,key);
-  if(start<ctx.settings.start||end>DAY_END||start<template.from||(template.to!==null&&end>template.to))return false;
-  if(ctx.blocked.some(b=>overlapsRange(start,end,b)))return false;
+  if(start<ctx.settings.start||end>DAY_END)return 'day';
+  if(start<template.from||(template.to!==null&&end>template.to))return 'hours';
+  if(ctx.blocked.some(b=>overlapsRange(start,end,b)))return 'blocked';
   const clash=item=>{const g=Math.max(gap,item.gap);return start<item.end+g&&item.start<end+g;};
-  if((state.patients.get(patientId)||[]).some(clash))return false;
-  if(row.limit!=null&&peakAt(state.procedures.get(key)||[],start,end)+1>row.limit)return false;
-  if(instructor===null)return true;
+  if((state.patients.get(patientId)||[]).some(clash))return 'patient';
+  if(row.limit!=null&&peakAt(state.procedures.get(key)||[],start,end)+1>row.limit)return 'limit';
+  if(instructor===null)return null;
   const items=state.instructors.get(instructor)||[];
   let session=0;
   for(const item of items){
     if(!clash(item))continue;
     const parallel=item.key!==key&&ctx.linkOf.get(key)?.simultaneous&&ctx.linkOf.get(key)===ctx.linkOf.get(item.key);
     if(parallel)continue;
-    if(row.together==='single'||item.procedureId!==template.procedure.id||item.start!==start||item.end!==end)return false;
+    if(row.together==='single'||item.procedureId!==template.procedure.id||item.start!==start||item.end!==end)return 'busy';
     if(row.together==='groups'){
       const values=(ctx.groupList.find(g=>g.id===row.groupId)||ctx.groupList.find(g=>g.id===COMMON_GROUP))?.values||{},number=values[patientId];
-      if(number==null||values[item.patientId]!==number)return false;
+      if(number==null||values[item.patientId]!==number)return 'busy';
     }
     session++;
   }
-  if(session&&session+1>row.capacity)return false;
-  return returnsCount(ctx,[...items,{start,key}])<=returnsCount(ctx,items);
+  if(session&&session+1>row.capacity)return 'busy';
+  return returnsCount(ctx,[...items,{start,key}])<=returnsCount(ctx,items)?null:'returns';
 }
 function commit(state,patientId,template,start,gap){
   const item={patientId,procedureId:template.procedure.id,key:template.key,start,end:start+template.duration,gap};
@@ -311,7 +315,7 @@ function scored(ctx,state,unplaced,broken){
     }
   }
   const score=unplaced.length*1e9+broken.length*1e7+overtimeMinutes*1e4+lastEnd*10+windows;
-  return {place:state.place,unplaced,broken,overtime:overtime.length,score};
+  return {state,place:state.place,unplaced,broken,overtime:overtime.length,score};
 }
 function lockedReturns(ctx){
   const byInstructor=new Map();
@@ -335,8 +339,165 @@ export function planDay({procedures,day,settings,links=[],groupList=[],rng=Math.
     placed:place.length,
     total:place.length+best.unplaced.length,
     overtime:best.overtime,
-    unplaced:best.unplaced.map(item=>({...item,name:nameOf(item.key)})),
+    unplaced:best.unplaced.map(item=>({...item,name:nameOf(item.key),...explainUnplaced(ctx,best.state,item)})),
     broken:best.broken.map(item=>({...item,name:nameOf(item.key)})),
     lockedReturns:lockedReturns(ctx)
   }};
+}
+
+// ---- Why a procedure could not be placed.
+// Checks run in this order, so the check a candidate fails shows how close it came.
+const PROBLEM_ORDER=['day','hours','blocked','patient','limit','busy','returns'];
+function explainUnplaced(ctx,state,item){
+  const {patientId,key,reason}=item,templates=ctx.templates.get(key)||[],row=ctx.settings.rows[key];
+  const instructorIds=[...new Set(templates.map(t=>t.instructor).filter(Boolean))];
+  const limits=templates.map(t=>t.to).filter(to=>to!==null);
+  const until=limits.length===templates.length&&limits.length?Math.max(...limits):null;
+  const details={instructorIds,until,limit:row?.limit??null};
+  if(reason!=='no-time')return {...details,cause:reason};
+  let closest=-1,fits=false;
+  for(const start of startsFor(ctx,key))for(const template of templates){
+    const problem=placementProblem(ctx,state,patientId,template,start);
+    if(problem===null)fits=true;else closest=Math.max(closest,PROBLEM_ORDER.indexOf(problem));
+  }
+  // Each half fits somewhere on its own: only the link keeps it out.
+  if(fits)return {...details,cause:'link'};
+  return {...details,cause:PROBLEM_ORDER[closest]||'day'};
+}
+const joinNames=(ids,nameOf)=>ids.map(nameOf).join(', ');
+// Plain text for the report: what got in the way and what to change.
+export function describeCause(item,nameOf=id=>id){
+  const names=joinNames(item.instructorIds||[],nameOf),until=item.until!=null?` до ${hm(item.until)}`:'';
+  switch(item.cause){
+    case 'no-instructor':return {text:'не отмечен ни один инструктор',hint:'Отметьте инструктора в строке процедуры.'};
+    case 'no-pair':return {text:'нет общего инструктора для связки',hint:'Обе процедуры связки должны быть у одного инструктора.'};
+    case 'link':return {text:'нет двух свободных мест подряд для связки',hint:'Освободите время или уберите связку.'};
+    case 'hours':return {text:`вне времени работы${names?`: ${names}`:''}${until}`,hint:'Расширьте поля «с» и «до» у инструктора.'};
+    case 'blocked':return {text:'всё оставшееся время занято периодами «Не ставить на»',hint:'Снимите галочку у периода.'};
+    case 'patient':return {text:'у пациента нет свободного времени, когда работает инструктор',hint:'Освободите пациента или расширьте время инструктора.'};
+    case 'limit':return {text:`достигнут максимум одновременно${item.limit!=null?`: ${item.limit}`:''}`,hint:'Увеличьте «Макс.» или добавьте другое время.'};
+    case 'busy':return {text:`нет свободного времени у инструктора${names?`: ${names}`:''}${until}`,hint:until?'Сдвиньте «до», добавьте инструктора или сделайте процедуру совместной.':'Добавьте инструктора или сделайте процедуру совместной.'};
+    case 'returns':return {text:`инструктор уже перешёл на другую процедуру${names?`: ${names}`:''}`,hint:'Инструктор не возвращается к прежней процедуре: задайте порядок полями «с» и «до».'};
+    default:return {text:'до 24:00 не осталось места',hint:'Уменьшите число процедур в этот день.'};
+  }
+}
+
+// ---- Rough load estimate shown before generating.
+function subtractRanges(start,end,busy){
+  let parts=start<end?[[start,end]]:[];
+  for(const [from,to] of busy){
+    parts=parts.flatMap(([a,b])=>to<=a||from>=b?[[a,b]]:[...(from>a?[[a,from]]:[]),...(to<b?[[to,b]]:[])]);
+  }
+  return parts;
+}
+const mergedLength=parts=>{
+  let total=0,reach=-Infinity;
+  for(const [a,b] of [...parts].sort((x,y)=>x[0]-y[0])){const from=Math.max(a,reach);if(b>from){total+=b-from;reach=b;}}
+  return total;
+};
+export function estimateLoad({procedures,day,settings:raw,links=[],groupList=[]}){
+  if(checkSettings(raw,procedures,day,links).length)return null;
+  const ctx=context({procedures,day,settings:raw,links,groupList}),settings=ctx.settings;
+  const blockedRanges=ctx.blocked.map(b=>[b.start,b.start+b.duration]);
+  const has=new Set(ctx.kept.map(a=>`${a.patientId}|${ctx.keyOf(a)}`));
+  const busyOf=id=>ctx.kept.filter(a=>a.instructorId===id).map(a=>[a.start,a.start+a.duration]);
+  const lengthFor=(key,duration)=>{const row=settings.rows[key];return row.grid?Math.ceil(duration/settings.slot)*settings.slot:duration+row.gap;};
+  const windowOf=(t,limit)=>subtractRanges(Math.max(settings.start,t.from),t.to!==null?Math.min(t.to,limit):limit,[...blockedRanges,...busyOf(t.instructor)]);
+  const fitIn=(parts,key,duration)=>{
+    const row=settings.rows[key];let count=0;
+    for(const [a,b] of parts){
+      if(row.grid){let cursor=a;for(const slot of ctx.slots)if(slot>=cursor&&slot+duration<=b){count++;cursor=slot+duration;}}
+      else if(b-a>=duration)count+=Math.floor((b-a+row.gap)/(duration+row.gap));
+    }
+    return count;
+  };
+  const sessionsFor=(key,patients)=>{
+    const row=settings.rows[key];
+    if(row.together==='single')return patients.length;
+    if(row.together==='any')return Math.ceil(patients.length/row.capacity);
+    const values=(groupList.find(g=>g.id===row.groupId)||groupList.find(g=>g.id===COMMON_GROUP))?.values||{},sizes=new Map();let alone=0;
+    for(const id of patients){if(values[id]==null)alone++;else sizes.set(values[id],(sizes.get(values[id])||0)+1);}
+    return alone+[...sizes.values()].reduce((sum,size)=>sum+Math.ceil(size/row.capacity),0);
+  };
+  const statusOf=(needed,fit,fitDay)=>needed<=fit?'ok':needed<=fitDay?'late':'lost';
+  const rows={},shares=new Map();
+  for(const key of ctx.keys){
+    const workers=ctx.templates.get(key)||[],patients=ctx.patientIds.filter(id=>!has.has(`${id}|${key}`)),needed=sessionsFor(key,patients),name=ctx.pools.get(key)?.name??key,row=settings.rows[key];
+    if(!needed){rows[key]={name,needed:0,fit:null,fitDay:null,status:'ok'};continue;}
+    if(!workers.length){rows[key]={name,needed,fit:0,fitDay:0,status:'lost',cause:'no-instructor'};continue;}
+    const link=ctx.linkOf.get(key);
+    if(link){
+      const other=link.a===key?link.b:link.a,partners=ctx.templates.get(other)||[];
+      if(partners.length&&!workers.some(t=>partners.some(p=>p.instructor===t.instructor))){rows[key]={name,needed,fit:0,fitDay:0,status:'lost',cause:'no-pair'};continue;}
+    }
+    let fit=null,fitDay=null;
+    if(workers.some(t=>t.instructor!==null)){
+      const counted=workers.filter(t=>t.instructor!==null);
+      const perWorker=counted.map(t=>fitIn(windowOf(t,settings.end),key,t.duration)),perDay=counted.map(t=>fitIn(windowOf(t,DAY_END),key,t.duration));
+      fit=perWorker.reduce((a,b)=>a+b,0);fitDay=perDay.reduce((a,b)=>a+b,0);
+      if(row.limit!=null){
+        const perSession=Math.max(1,patients.length/needed),atOnce=Math.max(1,Math.floor(row.limit/perSession));
+        fit=Math.min(fit,atOnce*Math.max(...perWorker));fitDay=Math.min(fitDay,atOnce*Math.max(...perDay));
+      }
+      for(const t of counted){
+        if(!shares.has(t.instructor))shares.set(t.instructor,[]);
+        shares.get(t.instructor).push({key,template:t,sessions:needed/counted.length,minutes:needed/counted.length*lengthFor(key,t.duration)});
+      }
+    }
+    rows[key]={name,needed,fit,fitDay,status:fit===null?'ok':statusOf(needed,fit,fitDay)};
+  }
+  // An instructor with several procedures shares one working day between them.
+  const instructors=[];
+  for(const [instructorId,works] of shares){
+    if(works.length<2)continue;
+    const groups=new Map();
+    for(const work of works){
+      const link=ctx.linkOf.get(work.key),id=link?.simultaneous?`${link.a}\n${link.b}`:work.key;
+      const current=groups.get(id);
+      if(!current||work.minutes>current.minutes)groups.set(id,work);
+    }
+    const chosen=[...groups.values()],minutes=chosen.reduce((sum,w)=>sum+w.minutes,0),needed=Math.ceil(chosen.reduce((sum,w)=>sum+w.sessions,0)),length=minutes/needed;
+    const available=limit=>mergedLength(works.flatMap(w=>windowOf(w.template,limit)));
+    const fit=Math.floor(available(settings.end)/length),fitDay=Math.floor(available(DAY_END)/length);
+    instructors.push({instructorId,needed,fit,fitDay,status:statusOf(needed,fit,fitDay)});
+  }
+  // A patient's procedures must fit into the patient's own free time.
+  let late=0,lost=0;
+  for(const id of ctx.patientIds){
+    const own=ctx.kept.filter(a=>a.patientId===id).map(a=>[a.start,a.start+a.duration]);
+    let minutes=0;
+    for(const key of ctx.keys){
+      if(has.has(`${id}|${key}`))continue;
+      const durations=(ctx.templates.get(key)||[]).map(t=>lengthFor(key,t.duration));
+      if(durations.length)minutes+=Math.min(...durations);
+    }
+    const free=limit=>mergedLength(subtractRanges(settings.start,limit,[...blockedRanges,...own]));
+    if(minutes>free(DAY_END))lost++;else if(minutes>free(settings.end))late++;
+  }
+  const all=[...Object.values(rows).map(r=>r.status),...instructors.map(i=>i.status),...(lost?['lost']:[]),...(late?['late']:[])];
+  return {rows,instructors,patients:{late,lost},status:all.includes('lost')?'lost':all.includes('late')?'late':'ok'};
+}
+const plural=(n,one,few,many)=>{const a=n%100,b=n%10;return a>10&&a<20?many:b===1?one:b>=2&&b<=4?few:many;};
+// Lines for the dialog: the most serious first, nothing when all is well.
+export function describeLoad(load,nameOf=id=>id){
+  const lines=[];
+  const sessions=n=>`${n} ${plural(n,'сеанс','сеанса','сеансов')}`;
+  const shown=new Set();
+  for(const row of Object.values(load.rows)){
+    if(row.status==='ok')continue;
+    if(row.cause==='no-instructor')lines.push({status:'lost',text:`«${row.name}»: не отмечен ни один инструктор.`});
+    else if(row.cause==='no-pair'){if(!shown.has('pair')){shown.add('pair');lines.push({status:'lost',text:`«${row.name}»: нет общего инструктора для связки.`});}}
+    else if(row.status==='late')lines.push({status:'late',text:`«${row.name}»: нужно ${sessions(row.needed)}, до конца дня помещается ${row.fit}. Остальные уйдут позже.`});
+    else lines.push({status:'lost',text:`«${row.name}»: нужно ${sessions(row.needed)}, помещается ${row.fitDay}. Не поставится примерно ${row.needed-row.fitDay}.`});
+  }
+  for(const item of load.instructors){
+    if(item.status==='ok')continue;
+    const name=nameOf(item.instructorId);
+    if(item.status==='late')lines.push({status:'late',text:`${name}: нужно ${sessions(item.needed)} на все процедуры, до конца дня помещается ${item.fit}. Остальные уйдут позже.`});
+    else lines.push({status:'lost',text:`${name}: нужно ${sessions(item.needed)} на все процедуры, а до 24:00 помещается ${item.fitDay}. Не поставится примерно ${item.needed-item.fitDay}.`});
+  }
+  const people=n=>`${n} ${plural(n,'пациента','пациентов','пациентов')}`;
+  if(load.patients.lost)lines.push({status:'lost',text:`У ${people(load.patients.lost)} процедуры не помещаются даже до 24:00.`});
+  if(load.patients.late)lines.push({status:'late',text:`У ${people(load.patients.late)} процедуры не помещаются в рабочий день.`});
+  return lines.sort((a,b)=>(a.status==='lost'?0:1)-(b.status==='lost'?0:1));
 }

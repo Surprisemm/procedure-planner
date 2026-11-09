@@ -90,8 +90,11 @@ export function updateProcedureTemplate(project,date,id,patch,{applyToDay=false}
   if(appointments.length)expandDayCanvas(d);
   return appointments.length;
 }
+export const DEFAULT_WORK_END=1050;
+// End of the working day, set per day in its properties. Older days have none yet.
+export const workdayEnd=day=>day.workEnd??DEFAULT_WORK_END;
 export function makeDay(date, patients = []) {
-  return { date, start:540, end:1050, step:5, defaultDuration:55,
+  return { date, start:540, end:1050, workEnd:DEFAULT_WORK_END, step:5, defaultDuration:55,
     columns:patients.filter(p=>!p.archived).map(p=>({ patientId:p.id, name:p.name, house:p.house, width:144, color:'#f8fafb', headerColor:'#ffffff' })),
     appointments:[], cells:[], disabledPatientIds:[], bands:[
       {id:uid(), name:'Обед', start:780, duration:30, color:'#edf0f3'}
@@ -257,6 +260,7 @@ export function validateProject(p) {
   for(const [key,d] of Object.entries(p.days)){
     assert(/^\d{4}-\d{2}-\d{2}$/.test(key)&&d.date===key&&!Number.isNaN(new Date(key+'T12:00:00').valueOf())&&localDate(new Date(key+'T12:00:00'))===key,'Некорректная дата');
     assert(Number.isInteger(d.start)&&Number.isInteger(d.end)&&d.start>=0&&d.end<=1440&&d.end>d.start&&[1,5,10,15].includes(d.step)&&Number.isInteger(d.defaultDuration)&&d.defaultDuration>0,'Некорректные настройки дня');
+    assert(d.workEnd===undefined||(Number.isInteger(d.workEnd)&&d.workEnd>0&&d.workEnd<=1440),'Некорректный конец рабочего дня');
     assert(Array.isArray(d.columns)&&Array.isArray(d.appointments)&&Array.isArray(d.bands)&&Array.isArray(d.cells),'Неполные данные дня');
     const colIds=new Set();d.columns.forEach(c=>{assert(patientIds.has(c.patientId)&&!colIds.has(c.patientId)&&typeof c.name==='string'&&typeof c.house==='string'&&Number.isFinite(c.width)&&c.width>=100&&c.width<=320&&color(c.color)&&color(c.headerColor),'Некорректная колонка');colIds.add(c.patientId);});
     if(d.disabledPatientIds!==undefined)assert(Array.isArray(d.disabledPatientIds)&&new Set(d.disabledPatientIds).size===d.disabledPatientIds.length&&d.disabledPatientIds.every(id=>colIds.has(id)),'Некорректный список выключенных пациентов');

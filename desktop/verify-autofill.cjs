@@ -24,7 +24,15 @@ module.exports=async({window,out})=>{
     assert(f.querySelector('#af-grid-all').checked,'Grid is on by default');
     assert(f.querySelector('[data-band-name="Обед"]').checked,'Lunch is blocked by default');
     assert(row(f,'афк · кушетка').querySelector('[data-limit]').value==='','Limit starts empty');
-    assert(f.querySelectorAll('.time-control').length===2+2*7,'Every time field must use the inspector picker');
+    const box=()=>document.querySelector('#af-estimate'),note=key=>row(document.querySelector('#autofill-form'),key).querySelector('[data-note]');
+    assert(box().textContent.includes('Оценка нагрузки')&&box().textContent.includes('Артем')&&box().classList.contains('lost'),'Estimate must name the overloaded instructor: '+box().textContent);
+    assert(note('физиотерапия').textContent==='нужно 10 · помещается 8'&&note('физиотерапия').classList.contains('late'),'Row note: '+note('физиотерапия').textContent);
+    assert(note('массаж').textContent==='нужно 10 · помещается 16'&&!note('массаж').classList.contains('late'),'Pool note: '+note('массаж').textContent);
+    const on=row(document.querySelector('#autofill-form'),'спорт').querySelector('[data-work-on]');on.click();
+    assert(box().textContent.includes('«Спорт»: не отмечен ни один инструктор'),'Estimate must update at once');on.click();
+    const limit=row(document.querySelector('#autofill-form'),'массаж').querySelector('[data-limit]');limit.value='1';limit.dispatchEvent(new Event('input',{bubbles:true}));
+    assert(note('массаж').textContent==='нужно 10 · помещается 8','Typing must update the estimate: '+note('массаж').textContent);limit.value='';limit.dispatchEvent(new Event('input',{bubbles:true}));
+    assert(f.querySelectorAll('.time-control').length===1+2*7,'Every time field must use the inspector picker');
     assert([...f.querySelectorAll('.time-input')].every(e=>e.readOnly),'Time must not be typed');
     assert(f.querySelectorAll('.af-card').length===4,'Dialog must be split into blocks');
     assert(f.querySelectorAll('[data-group-value]').length===10,'Every patient must be listed');
@@ -109,6 +117,7 @@ module.exports=async({window,out})=>{
     f.requestSubmit();
     assert(document.querySelector('#modal').open&&document.querySelector('#modal').textContent.includes('Итог автозаполнения'),'Report must explain a link without a shared instructor');
     assert(document.querySelector('#modal').textContent.includes('нет общего инструктора'),'Report reason missing');
+    assert(document.querySelector('.af-report-hint')?.textContent.includes('у одного инструктора'),'Report must say what to change');
   `);
   await shot('autofill-report.png');
   await step(`
@@ -118,7 +127,7 @@ module.exports=async({window,out})=>{
     f.querySelector('[data-af-remove-link]').click();f=document.querySelector('#autofill-form');
     assert(!f.querySelector('[data-link]'),'Link was not removed');
     f.querySelector('[name=start]').value='нет';f.requestSubmit();
-    assert(document.querySelector('#modal').open&&document.querySelector('#modal-error').textContent.includes('начало'),'Invalid time must block generation');
+    assert(document.querySelector('#modal').open&&document.querySelector('#modal-error').textContent.includes('Начало'),'Invalid time must block generation');
     document.querySelector('#modal [data-action=close-modal]').click();
     const png=document.querySelector('[data-action=export]');png.click();const canvas=document.querySelector('#export-preview canvas');assert(canvas,'Generated day must export');
     const shownDay=today(),last=Math.max(...shownDay.appointments.map(a=>a.start+a.duration)),text=document.querySelector('#export-end').value;

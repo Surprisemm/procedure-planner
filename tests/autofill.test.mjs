@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeDay,newProject,ensureStays,validateProject,clone} from '../domain.mjs';
-import {buildSlots,checkSettings,normalizeGroups,normalizeSettings,planDay,poolKey,procedurePools,resolveSettings,saveWeekdaySettings} from '../autofill.mjs';
+import {buildSlots,checkSettings,describeCause,describeLoad,estimateLoad,normalizeGroups,normalizeSettings,planDay,poolKey,procedurePools,resolveSettings,saveWeekdaySettings} from '../autofill.mjs';
+import {workdayEnd} from '../domain.mjs';
 
 const seeded=seed=>()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};
 const proc=(name,instructorId,duration=55)=>({id:`${name}|${instructorId}`,name,instructors:instructorId?[{instructorId,color:'#ffffff'}]:[],duration,color:'#ffffff',textColor:'#000000'});
@@ -252,4 +253,82 @@ test('new procedures appear with defaults and removed ones disappear',()=>{
   assert.equal(after.rows['массаж'].grid,false);assert.equal(after.rows['спорт'].grid,true);
   assert.deepEqual(Object.keys(normalizeSettings(settings,[proc('Спорт','s')],[]).rows),['спорт']);
   assert.equal(procedurePools([proc(' Массаж ','a'),proc('массаж','b')]).length,1);
+});
+
+test('load estimate: one masseur runs late, hours lose sessions, two masseurs fit',()=>{
+  const one=[proc('Массаж','m')];
+  let load=estimateLoad(setup(10,one));
+  assert.deepEqual([load.rows['массаж'].needed,load.rows['массаж'].fit,load.rows['массаж'].status],[10,8,'late']);
+  assert.equal(load.status,'late');assert.match(describeLoad(load)[0].text,/нужно 10 сеансов, до конца дня помещается 8/);
+  const ctx=setup(10,one,s=>{s.instructors['Массаж|m:m'].to='11:00';});
+  load=estimateLoad(ctx);assert.deepEqual([load.rows['массаж'].fit,load.rows['массаж'].fitDay,load.rows['массаж'].status],[2,2,'lost']);
+  assert.equal(run(ctx).report.unplaced.length,8,'the estimate matches the result');
+  const pair={...proc('Массаж','a'),instructors:[{instructorId:'a',color:'#ffffff'},{instructorId:'b',color:'#ffffff'}]};
+  load=estimateLoad(setup(10,[pair]));assert.equal(load.rows['массаж'].fit,16);assert.equal(load.status,'ok');assert.deepEqual(describeLoad(load),[]);
+});
+test('load estimate: an instructor with two procedures shares one day',()=>{
+  const procedures=[proc('Физио','artem'),proc('Тренажёр','artem')],ctx=setup(10,procedures),load=estimateLoad(ctx);
+  assert.equal(load.rows['физио'].status,'late');
+  const artem=load.instructors.find(i=>i.instructorId==='artem');
+  assert.deepEqual([artem.needed,artem.status],[20,'lost']);assert.ok(artem.fit>=8&&artem.fit<=9,'whole hours of the day: '+artem.fit);
+  assert.match(describeLoad(load,()=>'Артём')[0].text,/^Артём: нужно 20 сеансов/);
+  assert.ok(run(ctx).report.unplaced.length>0,'the warning is real');
+  const linked=estimateLoad({...setup(10,procedures),links:[{a:'физио',b:'тренажёр',simultaneous:true}]});
+  assert.equal(linked.instructors.find(i=>i.instructorId==='artem').needed,10,'both at once count once');
+});
+test('load estimate: groups, shared sessions, limits, locks and partial mode',()=>{
+  const sport=[proc('Спорт','s')];
+  assert.equal(estimateLoad(setup(10,sport,s=>{Object.assign(s.rows['спорт'],{together:'any',capacity:4});})).rows['спорт'].needed,3);
+  const grouped=estimateLoad({...setup(5,sport,s=>{Object.assign(s.rows['спорт'],{together:'groups',capacity:5});}),groupList:[{id:'common',name:'Общая',values:{p0:1,p1:1,p2:2}}]});
+  assert.equal(grouped.rows['спорт'].needed,4,'two groups and two patients alone');
+  const couches=[proc('Кушетка','a'),proc('Кушетка','b'),proc('Кушетка','c')];
+  assert.equal(estimateLoad(setup(30,couches,s=>{s.rows['кушетка'].limit=2;})).rows['кушетка'].fit,16,'two at once for eight slots');
+  const locked=setup(2,[proc('Массаж','m')]);locked.day.appointments=[appointment('l','p0',locked.procedures[0],540,{locked:true})];
+  const load=estimateLoad(locked);assert.equal(load.rows['массаж'].needed,1);assert.equal(load.rows['массаж'].fit,7,'the locked slot is taken');
+  locked.day.appointments.push(appointment('m','p1',locked.procedures[0],600,{locked:true}));
+  assert.equal(estimateLoad(locked).rows['массаж'].needed,0);
+  const partial=setup(2,[proc('Массаж','m'),proc('Спорт','s')],s=>{s.mode='partial';s.partialKeys=['спорт'];});
+  assert.deepEqual(Object.keys(estimateLoad(partial).rows),['спорт']);
+});
+test('load estimate: patients, missing instructors, links and bad settings',()=>{
+  const many=Array.from({length:10},(_,i)=>{const p=proc('П'+i,'i'+i);return p;});
+  const load=estimateLoad(setup(2,many));assert.equal(load.patients.late,2,'ten hours do not fit into a working day');assert.match(describeLoad(load).at(-1).text,/У 2 пациентов/);
+  const off=setup(1,[proc('Спорт','s')],s=>{s.instructors['Спорт|s:s'].enabled=false;});
+  assert.equal(estimateLoad(off).rows['спорт'].cause,'no-instructor');
+  const split=estimateLoad({...setup(1,[proc('К','y'),proc('Т','n')]),links:[{a:'к',b:'т',simultaneous:false}]});
+  assert.equal(split.rows['к'].cause,'no-pair');assert.equal(describeLoad(split).length,1,'one line for the pair');
+  assert.equal(estimateLoad(setup(1,[proc('Спорт',null)])).rows['спорт'].fit,null,'no instructor limit');
+  const bad=setup(1,[proc('Спорт','s')]);bad.settings.slot=0;assert.equal(estimateLoad(bad),null);
+});
+test('the report names what got in the way',()=>{
+  const names=id=>({m:'Юлия',y:'Наталья'}[id]||id);
+  const causes=ctx=>[...new Set(run(ctx).report.unplaced.map(u=>u.cause))];
+  const hours=setup(4,[proc('Массаж','m')],s=>{s.instructors['Массаж|m:m'].to='11:00';});
+  assert.deepEqual(causes(hours),['busy']);
+  const text=describeCause(run(hours).report.unplaced[0],names);assert.equal(text.text,'нет свободного времени у инструктора: Юлия до 11:00');assert.match(text.hint,/«до»/);
+  const late=setup(1,[proc('Массаж','m')],s=>{s.instructors['Массаж|m:m'].from='23:30';});
+  assert.deepEqual(causes(late),['hours']);
+  assert.deepEqual(causes(setup(1,[proc('Массаж','m')],s=>{s.instructors['Массаж|m:m'].enabled=false;})),['no-instructor']);
+  const limit=setup(40,[proc('Спорт','a'),proc('Спорт','b')],s=>{s.rows['спорт'].limit=1;});
+  assert.deepEqual(causes(limit),['limit']);assert.match(describeCause(run(limit).report.unplaced[0]).text,/максимум одновременно: 1/);
+  assert.deepEqual(causes({...setup(1,[proc('К','y'),proc('Т','n')]),links:[{a:'к',b:'т',simultaneous:false}]}),['no-pair']);
+  const crowded=setup(1,[proc('Массаж','m'),proc('Спорт','s')],s=>{s.instructors['Массаж|m:m'].to='10:00';});
+  crowded.day.appointments=[appointment('l','p0',crowded.procedures[1],540,{locked:true})];
+  assert.deepEqual(causes(crowded),['patient']);
+  const two=setup(1,[proc('К','y'),proc('Т','y')],s=>{s.instructors['Т|y:y'].to='10:00';s.instructors['К|y:y'].from='12:00';});
+  assert.deepEqual([...new Set(run({...two,links:[{a:'к',b:'т',simultaneous:false}]}).report.unplaced.map(u=>u.cause))].sort().join(),'link');
+  for(const cause of ['no-instructor','no-pair','link','hours','blocked','patient','limit','busy','returns','day']){
+    const d=describeCause({cause,instructorIds:['m'],until:660,limit:2},names);assert.ok(d.text&&d.hint,cause);
+  }
+});
+
+test('generation and the estimate take the working day end from the day',()=>{
+  const ctx=setup(10,[proc('Массаж','m')]);ctx.settings.end=1400;
+  assert.equal(run(ctx).report.overtime,2,'the settings value is ignored');
+  assert.equal(estimateLoad(ctx).rows['массаж'].fit,8);
+  ctx.day.workEnd=720;
+  assert.equal(run(ctx).report.overtime,7,'until 12:00 only three start and finish in time');
+  assert.equal(estimateLoad(ctx).rows['массаж'].fit,3);
+  ctx.day.workEnd=500;assert.match(checkSettings(ctx.settings,ctx.procedures,ctx.day)[0],/раньше конца/);
+  delete ctx.day.workEnd;assert.equal(workdayEnd(ctx.day),1050,'older days end at 17:30');
 });
