@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {newProject,ensureStays,createStay,switchStay,copyScheduleDay,transferAppointment,validateProject,clone,stayDates,addCalendarDays} from '../domain.mjs';
+import {newProject,ensureStays,createStay,switchStay,copyScheduleDay,transferAppointment,transferAppointments,makeDay,validateProject,clone,stayDates,addCalendarDays} from '../domain.mjs';
 test('new stay has 28 whole calendar days across year boundary with copied roster enabled and lunch only',()=>{
   const p=ensureStays(newProject()),id=createStay(p,'Зимний заезд','2026-12-20',true),dates=Object.keys(p.days).sort(),stay=p.stays.find(s=>s.id===id);
   assert.equal(dates.length,28);assert.equal(dates[0],'2026-12-20');assert.equal(dates.at(-1),'2027-01-16');assert.equal(stay.startDate,dates[0]);assert.equal(stay.endDate,dates.at(-1));
@@ -23,3 +23,17 @@ test('copying patient roster to another stay creates independent cards and no as
 test('copy day preserves exact durations and existing destination is protected',()=>{const p=newProject(),source=Object.keys(p.days)[0],other=source==='2030-01-01'?'2030-01-02':'2030-01-01';const copy=copyScheduleDay(p,source,other,{appointments:true});assert.equal(copy.defaultDuration,p.days[source].defaultDuration);assert.equal(copy.appointments[0].duration,p.days[source].appointments[0].duration);assert.notEqual(copy.appointments[0].id,p.days[source].appointments[0].id);assert.throws(()=>copyScheduleDay(p,source,other));copy.columns[0].house='99';assert.notEqual(p.days[source].columns[0].house,'99');});
 test('individual appointment can be copied or moved without affecting other records',()=>{const p=newProject(),source=Object.keys(p.days)[0],target=source==='2026-11-05'?'2026-11-06':'2026-11-05';copyScheduleDay(p,source,target);const item=p.days[source].appointments[0],count=p.days[source].appointments.length;const copy=transferAppointment(p,source,item.id,target);assert.equal(p.days[source].appointments.length,count);assert.equal(copy.start,item.start);transferAppointment(p,source,item.id,target,true);assert.equal(p.days[source].appointments.length,count-1);validateProject(p);});
 test('visual period never blocks copying or moving into another day',()=>{const p=newProject(),source=Object.keys(p.days)[0],target=source==='2026-11-05'?'2026-11-06':'2026-11-05';copyScheduleDay(p,source,target);const item=p.days[source].appointments[0];p.days[target].bands.push({id:'legacy',name:'Общий период',start:item.start,duration:item.duration,color:'#edf0f3',rule:'block'});transferAppointment(p,source,item.id,target,true);assert.ok(!p.days[source].appointments.some(a=>a.id===item.id));assert.equal(p.days[target].appointments.length,1);});
+test('several appointments are copied or moved together, and a conflict changes nothing',()=>{
+  const p=newProject(),source=Object.keys(p.days)[0],target=source==='2026-11-05'?'2026-11-06':'2026-11-05';
+  p.days[target]=makeDay(target,p.patients);
+  const ids=p.days[source].appointments.slice(0,2).map(a=>a.id),count=p.days[source].appointments.length;
+  const copies=transferAppointments(p,source,ids,target);
+  assert.equal(copies.length,2);assert.equal(p.days[target].appointments.length,2);assert.equal(p.days[source].appointments.length,count);
+  const second=p.days[source].appointments.find(a=>a.id===ids[1]),oldStart=second.start;second.start=1430;
+  assert.throws(()=>transferAppointments(p,source,ids,target),/./);
+  assert.equal(p.days[target].appointments.length,2);second.start=oldStart;
+  p.days[target].appointments=[];
+  transferAppointments(p,source,ids,target,true);
+  assert.equal(p.days[source].appointments.length,count-2);assert.equal(p.days[target].appointments.length,2);
+  validateProject(p);
+});

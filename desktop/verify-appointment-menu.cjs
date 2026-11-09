@@ -1,0 +1,46 @@
+module.exports=async({window})=>{
+  await window.webContents.executeJavaScript(`(async()=>{
+    const assert=(value,message)=>{if(!value)throw Error(message)};
+    const read=()=>JSON.parse(window.ritmDesktop.storage.load().data);
+    const frame=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const date=document.querySelector('#date-picker').value;
+    const undo=()=>document.body.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,ctrlKey:true,code:'KeyZ'}));
+    const open=id=>{const el=document.querySelector('[data-appointment="'+id+'"]'),r=el.getBoundingClientRect();el.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:r.left+20,clientY:r.top+20}));return document.querySelector('.appt-menu');};
+    const items=menu=>[...menu.querySelectorAll('button')];
+    const place=(index,start)=>{const card=document.querySelectorAll('[data-procedure]')[index],r=card.getBoundingClientRect();card.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,button:0,clientX:r.left+15,clientY:r.top+15}));document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));document.querySelector('[data-action="place-procedure"]').click();const form=document.querySelector('#place-form');form.querySelector('[name="start"]').value=start;form.requestSubmit();};
+    if(!read().days[date].appointments.length){place(0,'09:00');place(0,'10:00');place(1,'11:00');}
+    const original=read(),list=original.days[date].appointments;
+    const groups={};for(const a of list)(groups[a.procedureId]??=[]).push(a);
+    const type=Object.keys(groups).find(k=>k!=='undefined'&&groups[k].length>=2);
+    assert(type,'Test day has no two blocks of one procedure; blocks: '+list.length+', types: '+Object.keys(groups).join(','));
+    const first=groups[type][0],other=list.find(a=>a.procedureId!==type);
+    assert(other,'Test day has only one procedure type');
+    let menu=open(first.id);
+    assert(menu&&items(menu).length===3,'Menu must have 3 items');
+    assert(/Блокировать/.test(items(menu)[0].textContent)&&/Удалить это/.test(items(menu)[1].textContent)&&/Удалить все/.test(items(menu)[2].textContent),'Menu labels wrong');
+    document.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,key:'Escape'}));
+    assert(!document.querySelector('.appt-menu'),'Escape did not close menu');
+    menu=open(first.id);items(menu)[0].click();
+    assert(!document.querySelector('.appt-menu'),'Menu stays open after click');
+    assert(read().days[date].appointments.find(a=>a.id===first.id).locked===true,'Lock item did not lock');
+    menu=open(first.id);assert(/Снять блокировку/.test(items(menu)[0].textContent),'Lock label not switched');items(menu)[0].click();
+    assert(!read().days[date].appointments.find(a=>a.id===first.id).locked,'Unlock failed');
+    menu=open(first.id);items(menu)[1].click();
+    let now=read().days[date].appointments;
+    assert(now.length===list.length-1&&!now.some(a=>a.id===first.id),'Delete this removed wrong count');
+    undo();await frame();
+    assert(read().days[date].appointments.length===list.length,'Undo of delete-this failed');
+    menu=open(first.id);items(menu)[2].click();
+    now=read().days[date].appointments;
+    assert(!now.some(a=>a.procedureId===type),'Delete all left blocks of the type');
+    assert(now.length===list.length-groups[type].length,'Delete all removed other types');
+    assert(JSON.stringify(read().procedures)===JSON.stringify(original.procedures),'Library changed');
+    undo();await frame();
+    const norm=l=>JSON.stringify(l.map(a=>({...a,locked:!!a.locked})));
+    assert(norm(read().days[date].appointments)===norm(list),'One undo did not restore all');
+    assert(open(other.id)&&document.querySelector('.appt-menu'),'Menu for other type missing');
+    document.body.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+    assert(!document.querySelector('.appt-menu'),'Outside click did not close menu');
+  })()`);
+  console.log('APPOINTMENT_MENU_VERIFIED');
+};

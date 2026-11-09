@@ -226,6 +226,17 @@ export function transferAppointment(p,sourceDate,id,targetDate,move=false){
   if(!target.columns.some(c=>c.patientId===item.patientId))target.columns.push(clone(source.columns.find(c=>c.patientId===item.patientId)));
   target.appointments.push(next);expandDayCanvas(target);if(move)source.appointments=source.appointments.filter(a=>a.id!==id);return next;
 }
+// Copies or moves several appointments to another day; all of them are checked first, so nothing changes on error.
+export function transferAppointments(p,sourceDate,ids,targetDate,move=false){
+  assert(sourceDate!==targetDate,'Выберите другой день');const source=p.days[sourceDate],target=p.days[targetDate];assert(source&&target,'День не найден');
+  const items=ids.map(id=>source.appointments.find(a=>a.id===id));assert(items.length&&items.every(Boolean),'Процедура не найдена');
+  const trial={...target,appointments:[...target.appointments]},copies=[];
+  for(const item of items){const next={...clone(item),id:uid()},error=validatePlacement(trial,next);assert(!error,error);trial.appointments.push(next);copies.push(next);}
+  for(const item of items)if(!target.columns.some(c=>c.patientId===item.patientId))target.columns.push(clone(source.columns.find(c=>c.patientId===item.patientId)));
+  target.appointments.push(...copies);expandDayCanvas(target);
+  if(move){const gone=new Set(ids);source.appointments=source.appointments.filter(a=>!gone.has(a.id));}
+  return copies;
+}
 // Optional generator settings stored on a schedule; older files simply lack them.
 export function validateAutofill(a){
   if(a===undefined)return;

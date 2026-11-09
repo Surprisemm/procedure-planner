@@ -265,6 +265,8 @@ module.exports=async function runSmoke({app,window:mainWindow,smokeDir,root:ROOT
   if(process.argv.includes('--smoke-day-tools'))await require('./verify-day-tools.cjs')({window:mainWindow,out:smokeDir});
   if(process.argv.includes('--smoke-column-drag'))await require('./verify-column-drag.cjs')({window:mainWindow,out:smokeDir});
   if(process.argv.includes('--smoke-delete-button'))await require('./verify-appointment-delete.cjs')({window:mainWindow});
+  if(process.argv.includes('--smoke-appointment-menu'))await require('./verify-appointment-menu.cjs')({window:mainWindow});
+  if(process.argv.includes('--smoke-multi-select'))await require('./verify-multi-select.cjs')({window:mainWindow});
   if(process.argv.includes('--smoke-window'))await require('./verify-window.cjs')({window:mainWindow,out:smokeDir});
   if(process.argv.includes('--smoke-tutorial'))await require('./verify-tutorial.cjs')({window:mainWindow,out:smokeDir});
   if(process.argv.includes('--smoke-chrome')){
