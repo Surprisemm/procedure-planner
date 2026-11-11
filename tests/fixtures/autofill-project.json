@@ -1,0 +1,3010 @@
+{
+  "version": 1,
+  "defaultsVersion": 2,
+  "demo": false,
+  "patients": [
+    {
+      "id": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+      "name": "Соколова Анна Сергеевна",
+      "house": "1",
+      "note": "",
+      "archived": false
+    },
+    {
+      "id": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+      "name": "Волков Михаил Андреевич",
+      "house": "2",
+      "note": "",
+      "archived": false
+    },
+    {
+      "id": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+      "name": "Орлова Елена Викторовна",
+      "house": "3",
+      "note": "",
+      "archived": false
+    },
+    {
+      "id": "69f94f22-076d-4375-9efc-0e615f8d687f",
+      "name": "Морозов Александр Игоревич",
+      "house": "4",
+      "note": "",
+      "archived": false
+    },
+    {
+      "id": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+      "name": "Лебедева Мария Павловна",
+      "house": "5",
+      "note": "",
+      "archived": false
+    },
+    {
+      "id": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+      "name": "Козлов Дмитрий Алексеевич",
+      "house": "6",
+      "note": "",
+      "archived": false
+    },
+    {
+      "id": "db6c60b3-4754-4744-bcea-861825364213",
+      "name": "Новикова Ольга Ивановна",
+      "house": "7",
+      "note": "",
+      "archived": false
+    },
+    {
+      "id": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+      "name": "Павлов Андрей Николаевич",
+      "house": "8",
+      "note": "",
+      "archived": false
+    },
+    {
+      "id": "010f89b9-d673-46c1-8915-f2e9bab96504",
+      "name": "Смирнова Ирина Олеговна",
+      "house": "9",
+      "note": "",
+      "archived": false
+    },
+    {
+      "id": "96542a85-f39b-462b-a56c-05f30c277c8b",
+      "name": "Белов Сергей Петрович",
+      "house": "10",
+      "note": "",
+      "archived": false
+    }
+  ],
+  "procedures": [
+    {
+      "id": "cb8e5841-0ad1-4452-93bc-3dee692e41dd",
+      "name": "Массаж",
+      "color": "#f7df88",
+      "textColor": "#26332f",
+      "duration": 55,
+      "note": "",
+      "instructorId": "a8a512aa-bff3-4b4f-8d61-5b32b02621a1"
+    },
+    {
+      "id": "8831c78e-c85c-4252-80d0-3a306c6f8562",
+      "name": "Физиотерапия",
+      "color": "#d2b4e9",
+      "textColor": "#26332f",
+      "duration": 55,
+      "note": "",
+      "instructorId": "1728e98f-f57c-4a03-a270-5ca855aae6bb"
+    },
+    {
+      "id": "82516be8-08ff-4b9b-a01f-d57f7a8cff13",
+      "name": "Эрготерапия",
+      "color": "#f3b5ac",
+      "textColor": "#26332f",
+      "duration": 55,
+      "note": "",
+      "instructorId": "e6b5ddea-f34b-420b-93b8-c433031d4a2b"
+    },
+    {
+      "id": "5792ded6-cdc3-4c65-8ffe-017ddc7f73ab",
+      "name": "Спорт",
+      "color": "#a8d9ee",
+      "textColor": "#26332f",
+      "duration": 55,
+      "note": "",
+      "instructorId": "9b0cc66a-b777-4a49-a1fa-27a2feab532f"
+    },
+    {
+      "id": "1c2614ac-e61e-4229-9141-55bd20e48a80",
+      "name": "АФК · кушетка",
+      "color": "#f0f0f0",
+      "textColor": "#26332f",
+      "duration": 55,
+      "note": "",
+      "instructorId": "35ef2149-1c43-4b8e-847d-8490129be899"
+    },
+    {
+      "id": "49d791fd-bb64-4ef3-aa0e-4dff8909a489",
+      "name": "АФК · тренажёр",
+      "color": "#d8dfe8",
+      "textColor": "#26332f",
+      "duration": 55,
+      "note": "",
+      "instructorId": "1728e98f-f57c-4a03-a270-5ca855aae6bb"
+    },
+    {
+      "id": "00ef2e71-07c2-45a6-b601-62dd9e6c6a49",
+      "name": "Массаж",
+      "color": "#bddcc2",
+      "textColor": "#26332f",
+      "duration": 50,
+      "note": "",
+      "textStyles": {},
+      "instructorId": "35f9362d-cc0d-4f82-baa1-9bb231204bd2"
+    }
+  ],
+  "instructors": [
+    {
+      "id": "a8a512aa-bff3-4b4f-8d61-5b32b02621a1",
+      "name": "Массажист 1"
+    },
+    {
+      "id": "35f9362d-cc0d-4f82-baa1-9bb231204bd2",
+      "name": "Массажист 2"
+    },
+    {
+      "id": "e6b5ddea-f34b-420b-93b8-c433031d4a2b",
+      "name": "Эрготерапевт"
+    },
+    {
+      "id": "9b0cc66a-b777-4a49-a1fa-27a2feab532f",
+      "name": "АФК-инструктор 2"
+    },
+    {
+      "id": "35ef2149-1c43-4b8e-847d-8490129be899",
+      "name": "АФК-инструктор 1"
+    },
+    {
+      "id": "1728e98f-f57c-4a03-a270-5ca855aae6bb",
+      "name": "Физиотерапевт"
+    }
+  ],
+  "days": {
+    "2026-11-06": {
+      "date": "2026-11-06",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "cf60dfa3-726d-4c2e-8ab2-91d25e9c6edb",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-07": {
+      "date": "2026-11-07",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "107c2dad-a307-46f0-b0d1-a3d86881819d",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-08": {
+      "date": "2026-11-08",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "6390c7d8-6dd7-41e2-953f-5d5af9bfc1df",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-09": {
+      "date": "2026-11-09",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "86f030c2-7638-4840-b63e-d34fbc30bea2",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-10": {
+      "date": "2026-11-10",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "be4ee503-6520-4027-8790-3ee1cd927aea",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-11": {
+      "date": "2026-11-11",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "1b48c34e-8176-4259-905c-21b8b4f30422",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-12": {
+      "date": "2026-11-12",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "8dd86581-b260-47ce-b281-51ab84c8f8dd",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-13": {
+      "date": "2026-11-13",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "2bd64a0a-7693-4799-aa8f-58e0269e93df",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-14": {
+      "date": "2026-11-14",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "78e5eb59-7858-4b9a-b212-6cb862fa4ae8",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-15": {
+      "date": "2026-11-15",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "8bdf3bb4-9b3c-4594-b6c6-24ad6b9557c0",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-16": {
+      "date": "2026-11-16",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "2cbe2547-b06b-4f4d-85e2-bab72a454285",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-17": {
+      "date": "2026-11-17",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "55081f8b-a561-4d41-8d57-ea14d2f3dbb6",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-18": {
+      "date": "2026-11-18",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "6d4199f9-55b2-4315-ad74-6c1e462791aa",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-19": {
+      "date": "2026-11-19",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "36cf5488-de52-402b-adf8-9f183f4727f1",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-20": {
+      "date": "2026-11-20",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "532da432-aaa8-46a4-8d57-5a1e18fd0325",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-21": {
+      "date": "2026-11-21",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "6f940fa4-8d8a-4b0d-96a4-cdd21b7239b7",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-22": {
+      "date": "2026-11-22",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "8b641973-9f11-4d42-8238-d66135027fd8",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-23": {
+      "date": "2026-11-23",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "9bbb02e1-2fad-4866-bc51-6fcf37673656",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-24": {
+      "date": "2026-11-24",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "ebe9bcd9-560e-41ac-b66a-61220bc51e0b",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-25": {
+      "date": "2026-11-25",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "2bf0354d-5a1a-4ff1-bd84-8969b6da5f62",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-26": {
+      "date": "2026-11-26",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "4395fdd0-f955-4d22-a322-c6563dd31f60",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-27": {
+      "date": "2026-11-27",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "d20945de-fef3-42e9-98b2-2129a56f9502",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-28": {
+      "date": "2026-11-28",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "034017a9-0d66-4e47-9c6e-a84457d4fe92",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-29": {
+      "date": "2026-11-29",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "e44ddb16-3b0c-4db4-b029-9b4aeba3690f",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-11-30": {
+      "date": "2026-11-30",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "da1eb190-aa98-4996-8ea2-7fe60c85d3be",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-12-01": {
+      "date": "2026-12-01",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "674b1f79-1771-4881-8b4e-bb8f5f724ce3",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-12-02": {
+      "date": "2026-12-02",
+      "start": 540,
+      "end": 1050,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "75266ac8-a5c9-424f-8340-94f6e68a7624",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    },
+    "2026-12-03": {
+      "date": "2026-12-03",
+      "start": 540,
+      "end": 1110,
+      "step": 5,
+      "defaultDuration": 55,
+      "columns": [
+        {
+          "patientId": "b0626cd9-0c6d-4618-abb1-e693f8f033bf",
+          "name": "Соколова Анна Сергеевна",
+          "house": "1",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "243ecb4c-657e-4660-a388-f058ab0ab81c",
+          "name": "Волков Михаил Андреевич",
+          "house": "2",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "5f63cf80-9f1c-453d-af0a-f3a1e2a3fd55",
+          "name": "Орлова Елена Викторовна",
+          "house": "3",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "69f94f22-076d-4375-9efc-0e615f8d687f",
+          "name": "Морозов Александр Игоревич",
+          "house": "4",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b4f8343f-afb1-43c8-884c-c5099bb33e4c",
+          "name": "Лебедева Мария Павловна",
+          "house": "5",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "459a5dcf-daed-43e7-b77d-2e14cd902e77",
+          "name": "Козлов Дмитрий Алексеевич",
+          "house": "6",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "db6c60b3-4754-4744-bcea-861825364213",
+          "name": "Новикова Ольга Ивановна",
+          "house": "7",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "b9d8b599-b7fd-4ee5-81ba-4d17c67e4130",
+          "name": "Павлов Андрей Николаевич",
+          "house": "8",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "010f89b9-d673-46c1-8915-f2e9bab96504",
+          "name": "Смирнова Ирина Олеговна",
+          "house": "9",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        },
+        {
+          "patientId": "96542a85-f39b-462b-a56c-05f30c277c8b",
+          "name": "Белов Сергей Петрович",
+          "house": "10",
+          "width": 144,
+          "color": "#f8fafb",
+          "headerColor": "#ffffff"
+        }
+      ],
+      "appointments": [],
+      "cells": [],
+      "disabledPatientIds": [],
+      "bands": [
+        {
+          "id": "1d63c246-67ad-4236-983c-2b123089d017",
+          "name": "Обед",
+          "start": 780,
+          "duration": 30,
+          "color": "#edf0f3"
+        }
+      ]
+    }
+  },
+  "currentStayId": "c78a881c-eafe-45fb-a2af-c230f048d1d6",
+  "stays": [
+    {
+      "id": "c78a881c-eafe-45fb-a2af-c230f048d1d6",
+      "name": "Тестовый заезд — 10 пациентов и 10 инструкторов",
+      "startDate": "2026-11-06",
+      "endDate": "2026-12-03",
+      "viewDate": "2026-12-03"
+    }
+  ],
+  "rosterVersion": 1
+}

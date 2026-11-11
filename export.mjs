@@ -11,7 +11,12 @@ function textBox(ctx,value,x,y,w,h,{size=12,fontFamily='Segoe UI',bold=false,ita
   ctx.restore();
 }
 function styledBox(ctx,value,x,y,w,h,style,options={}){textBox(ctx,value,x,y,w,h,{size:style.fontSize,fontFamily:style.fontFamily,bold:style.bold,italic:style.italic,...options});}
-export function renderScheduleImage(day,{scale=2,start=day.start,end=Math.min(1439,day.end),columns=visibleColumns(day)}={}){
+// The same day seen by instructors: one column per instructor, each block names the patient.
+export function instructorDay(day,instructors,patientName){
+  const ids=new Set(instructors.map(i=>i.id));
+  return {...day,disabledPatientIds:[],columns:instructors.map(i=>({patientId:i.id,name:i.name,house:'',width:200,color:'#f8fafb',headerColor:'#ffffff'})),appointments:day.appointments.filter(a=>isPatientEnabled(day,a.patientId)&&ids.has(a.instructorId)).map(a=>({...a,patientId:a.instructorId,text:`${a.text}\n${patientName(a.patientId)}`}))};
+}
+export function renderScheduleImage(day,{scale=2,start=day.start,end=Math.min(1439,day.end),columns=visibleColumns(day),title='',houses=true,instructorName=null}={}){
   columns=columns.filter(c=>isPatientEnabled(day,c.patientId));
   const gutter=TIME_GUTTER,titleH=54,headH=78,axisInset=10,ppm=1.6;
   const width=gutter+columns.reduce((s,c)=>s+c.width,0),height=titleH+headH+axisInset+(end-start)*ppm+1;
@@ -19,11 +24,11 @@ export function renderScheduleImage(day,{scale=2,start=day.start,end=Math.min(14
   if(width*scale>16000||height*scale>16000||width*height*scale*scale>80000000)throw Error('Слишком большое изображение. Уменьшите масштаб или разделите колонки.');
   const canvas=document.createElement('canvas');canvas.width=Math.ceil(width*scale);canvas.height=Math.ceil(height*scale);
   const ctx=canvas.getContext('2d');if(!ctx)throw Error('Не удалось создать изображение');ctx.scale(scale,scale);ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
-  textBox(ctx,scheduleTitle(day.date),14,9,width-28,34,{size:18,bold:true,align:'left'});
+  textBox(ctx,title||scheduleTitle(day.date),14,9,width-28,34,{size:18,bold:true,align:'left'});
   const top=titleH+headH+axisInset,bodyH=(end-start)*ppm;
   ctx.fillStyle='#f5f7f8';ctx.fillRect(0,titleH,gutter,headH+axisInset+bodyH);textBox(ctx,'Время',0,titleH,gutter,headH,{size:11,bold:true});
   let x=gutter;
-  for(const col of columns){ctx.fillStyle=col.headerColor;ctx.fillRect(x,titleH,col.width,headH);styledBox(ctx,col.name,x+4,titleH+5,col.width-8,46,textStyle(col,'name',{fontSize:12}));styledBox(ctx,`Домик ${col.house||'—'}`,x,titleH+51,col.width,23,textStyle(col,'house',{fontSize:10}),{color:'#6b7077'});ctx.fillStyle=col.color;ctx.fillRect(x,top,col.width,bodyH);x+=col.width;}
+  for(const col of columns){ctx.fillStyle=col.headerColor;ctx.fillRect(x,titleH,col.width,headH);if(houses){styledBox(ctx,col.name,x+4,titleH+5,col.width-8,46,textStyle(col,'name',{fontSize:12}));styledBox(ctx,`Домик ${col.house||'—'}`,x,titleH+51,col.width,23,textStyle(col,'house',{fontSize:10}),{color:'#6b7077'});}else styledBox(ctx,col.name,x+4,titleH+5,col.width-8,68,textStyle(col,'name',{fontSize:13}));ctx.fillStyle=col.color;ctx.fillRect(x,top,col.width,bodyH);x+=col.width;}
   const intersects=a=>a.start<end&&a.start+a.duration>start;
   ctx.save();ctx.beginPath();ctx.rect(gutter,top,width-gutter,bodyH);ctx.clip();
   for(let m=Math.ceil(start/day.step)*day.step;m<=end;m+=day.step){ctx.strokeStyle=m%60===0?'#d4dcde':'#e9edef';ctx.lineWidth=m%60===0?1:.5;const y=top+(m-start)*ppm;ctx.beginPath();ctx.moveTo(gutter,y);ctx.lineTo(width,y);ctx.stroke();}
@@ -32,7 +37,8 @@ export function renderScheduleImage(day,{scale=2,start=day.start,end=Math.min(14
   for(const col of columns){for(const a of layoutAppointments(day.appointments.filter(a=>a.patientId===col.patientId&&intersects(a)))){
     const gap=3,w=(col.width-2*gap)/a.tracks-2,ax=x+gap+a.track*(w+2),y=top+(a.start-start)*ppm,h=Math.max(1,a.duration*ppm-2),style=textStyle(a,'text');
     ctx.save();ctx.globalAlpha=a.status==='cancelled'?.55:1;ctx.beginPath();ctx.roundRect(ax,y+1,w,h,Math.min(5,w/2,h/2));ctx.fillStyle=a.color;ctx.fill();ctx.strokeStyle='#00000020';ctx.stroke();ctx.clip();
-    const timeHeight=h>28?17:0;styledBox(ctx,a.text,ax+2,y+3,w-4,h-timeHeight-3,style,{color:a.textColor,align:a.align,strike:a.status==='cancelled'});
+    const timeHeight=h>28?17:0,who=instructorName&&a.instructorId&&h>52?13:0;styledBox(ctx,a.text,ax+2,y+3,w-4,h-timeHeight-who-3,style,{color:a.textColor,align:a.align,strike:a.status==='cancelled'});
+    if(who)textBox(ctx,instructorName(a.instructorId),ax,y+h-timeHeight-who,w,who,{size:9,color:a.textColor});
     if(timeHeight)textBox(ctx,`${hm(a.start)}–${hm(a.start+a.duration)}`,ax,y+h-timeHeight,w,timeHeight,{size:9,color:a.textColor});ctx.restore();
   }x+=col.width;}
   ctx.restore();

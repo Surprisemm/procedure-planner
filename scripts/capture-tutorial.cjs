@@ -34,14 +34,14 @@ module.exports=async({window,root})=>{
   // Main tutorial.
   await highlight('[data-action="new-stay"]');await shot('schedule','.schedule-picker');
   await highlight('.side-title [data-action="add-patient"]');await shot('patients','.sidebar',{height:385});
-  await run(`document.querySelector('[data-action="sidebar-tab"][data-tab="instructors"]').click();document.querySelector('[data-action="batch-instructors"]').click();const f=document.querySelector('#instructor-form');f.querySelector('textarea').value=['Юлия','Олимпиада','Наталья','Артём','Лиля','Дмитрий'].join(String.fromCharCode(10));f.requestSubmit();document.querySelector('.workspace-heading').click();`);
+  await run(`document.querySelector('[data-action="sidebar-tab"][data-tab="instructors"]').click();document.querySelector('[data-action="batch-instructors"]').click();const f=document.querySelector('#instructor-form');f.querySelector('textarea').value=['АФК-инструктор 1','АФК-инструктор 2','Массажист 1','Массажист 2','Физиотерапевт','Эрготерапевт'].join(String.fromCharCode(10));f.requestSubmit();document.querySelector('.workspace-heading').click();`);
   await highlight('.side-title [data-action="add-instructor"]');await shot('instructors','.sidebar',{height:385});
   await run(`${clearHighlight}document.querySelector('[data-action="sidebar-tab"][data-tab="patients"]').click();`);
   await highlight('[data-action="add-procedure"]');await shot('library','.library',{width:760});
   await run(`${clearHighlight}
-    __t.crew(0,['Юлия','Олимпиада']);
+    __t.crew(0,['Массажист 1','Массажист 2']);
     const color=document.querySelector('[data-proc-instructor-color="1"]');color.value='#bddcc2';__t.change(color);
-    __t.crew(1,['Артём']);__t.crew(2,['Лиля']);__t.crew(3,['Дмитрий']);__t.crew(4,['Наталья']);__t.crew(5,['Наталья']);
+    __t.crew(1,['Физиотерапевт']);__t.crew(2,['Эрготерапевт']);__t.crew(3,['АФК-инструктор 2']);__t.crew(4,['АФК-инструктор 1']);__t.crew(5,['АФК-инструктор 1']);
     __t.choose(document.querySelector('[data-procedure]'));`);
   await highlight('[data-action="add-proc-instructor"]');await shot('procedure','.inspector',{height:520});
   await run(`${clearHighlight}
@@ -60,29 +60,32 @@ module.exports=async({window,root})=>{
 
   // Autofill presentation.
   await highlight('[data-action="autofill"]');await shot('autofill-button','.workspace-heading');
-  await run(`${clearHighlight}document.querySelector('[data-action=autofill]').click();`);
+  await run(`${clearHighlight}
+    window.__t.card=name=>__t.choose([...document.querySelectorAll('.procedure-card')].find(e=>e.querySelector('strong').textContent===name));
+    window.__t.rule=(key,value)=>{const el=document.querySelector('.inspector [data-rule="'+key+'"]');if(el.type==='checkbox')el.click();else{el.value=value;__t.change(el);}};
+    window.__t.id=name=>__t.state().procedures.find(p=>p.name===name).id;
+    __t.card('Спорт');__t.rule('grid');__t.rule('together','any');__t.rule('capacity','3');
+    __t.card('АФК · кушетка');__t.rule('limit','2');
+    const link=document.querySelector('.inspector [data-rule-link]');link.value=__t.id('АФК · тренажёр');__t.change(link);
+    document.querySelector('.inspector [data-rule-both]').click();`);
+  await shot('autofill-rules','#inspector-form .inspector-section:nth-child(2)');
+  await run(`document.querySelector('.workspace-heading').click();document.querySelector('[data-action=autofill]').click();`);
   await settle();
   await shot('autofill-day','.af-card:nth-child(1)');
+  await run(`__t.work('массаж','Массажист 1','to','14:00');__t.change(__t.row('массаж').querySelector('[data-work-to]'));`);
   await shot('autofill-procedures','.af-card:nth-child(2)');
+  await run(`__t.form().querySelector('[data-af-view=instructors]').click();`);
+  await shot('autofill-instructors','.af-card:nth-child(2)');
   await run(`
-    __t.work('массаж','Юлия','to','14:00');
-    const sport=__t.row('спорт');sport.querySelector('[data-grid]').click();
-    let mode=__t.row('спорт').querySelector('[data-together]');mode.value='groups';__t.change(mode);
-    __t.row('афк · кушетка').querySelector('[data-limit]').value='2';
-    __t.form().querySelector('[data-af-add-link]').click();
-    const link=__t.form().querySelector('[data-link]');link.querySelector('[data-link-a]').value='афк · кушетка';link.querySelector('[data-link-b]').value='афк · тренажёр';link.querySelector('[data-link-both]').click();
+    __t.form().querySelector('[data-af-view=procedures]').click();
     __t.form().querySelector('[data-af-add-group]').click();
     const name=__t.form().querySelector('[data-group-name]');name.value='Спорт';__t.change(name);
-    const id=__t.form().querySelector('[data-group-name]').dataset.groupName;
-    const cells=[...__t.form().querySelectorAll('[data-group-value="'+id+'"]')];[1,1,1,2,2,2,3,3,3,3].forEach((n,i)=>{cells[i].value=n;});__t.change(cells[0]);
-    const again=__t.row('спорт').querySelector('[data-row-group]');again.value=id;__t.change(again);
-    const capacity=__t.row('спорт').querySelector('[data-capacity]');capacity.value='3';__t.change(capacity);`);
-  await settle();
-  await shot('autofill-rules','.af-card:nth-child(2)');
-  await shot('autofill-links','.af-card:nth-child(3)');
-  await shot('autofill-groups','.af-card:nth-child(4)');
-  await run(`__t.form().requestSubmit();`);
-  await settle(600);
+    const id=__t.form().querySelector('[data-group-name]').dataset.groupName;window.__group=id;
+    const cells=[...__t.form().querySelectorAll('[data-group-value="'+id+'"]')];[1,1,1,2,2,2,3,3,3,3].forEach((n,i)=>{cells[i].value=n;});__t.change(cells[0]);`);
+  await shot('autofill-groups','.af-card:nth-child(3)');
+  await run(`document.querySelector('#modal [data-af-save]').click();__t.card('Спорт');__t.rule('together','groups');__t.rule('groupId',window.__group);document.querySelector('.workspace-heading').click();
+    document.querySelector('[data-action=autofill]').click();__t.form().requestSubmit();`);
+  await settle(700);
   await shot('autofill-result','.schedule-frame');
   await run(`
     const blocks=[...document.querySelectorAll('.appointment-group')].filter(g=>g.querySelector('.appointment').textContent.includes('Массаж')).slice(0,3);
@@ -90,14 +93,14 @@ module.exports=async({window,root})=>{
     document.querySelector('.workspace-heading').click();`);
   await settle(200);
   await shot('autofill-locks','.schedule-frame');
-  await run(`document.querySelector('[data-action=autofill]').click();__t.form().querySelector('[name=mode][value=partial]').click();__t.row('эрготерапия').querySelector('[data-pick]').click();`);
+  await run(`document.querySelector('[data-action=autofill]').click();const all=__t.form().querySelector('[data-pick-all]');all.checked=false;__t.change(all);__t.row('эрготерапия').querySelector('[data-pick]').click();`);
   await settle();
   await shot('autofill-partial','#modal');
   await run(`
-    __t.form().querySelector('[name=mode][value=full]').click();
-    __t.work('массаж','Олимпиада','on',false);__t.work('массаж','Юлия','to','11:00');
+    {const all=__t.form().querySelector('[data-pick-all]');all.checked=true;__t.change(all);}
+    __t.work('массаж','Массажист 2','on',false);__t.work('массаж','Массажист 1','to','11:00');
     __t.form().requestSubmit();`);
-  await settle(600);
+  await settle(700);
   await run(`if(!document.querySelector('#modal').textContent.includes('Итог автозаполнения'))throw Error('Report did not open');`);
   await shot('autofill-report','#modal');
   await run(`document.querySelector('#modal [data-action=close-modal]').click();document.body.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,ctrlKey:true,code:'KeyZ'}));`);

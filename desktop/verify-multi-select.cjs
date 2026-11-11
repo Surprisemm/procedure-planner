@@ -7,7 +7,7 @@ module.exports=async({window})=>{
     const appts=()=>read().days[date].appointments;
     const undo=()=>document.body.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,ctrlKey:true,code:'KeyZ'}));
     const place=(index,start)=>{const card=document.querySelectorAll('[data-procedure]')[index],r=card.getBoundingClientRect();card.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,button:0,clientX:r.left+15,clientY:r.top+15}));document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));document.querySelector('[data-action="place-procedure"]').click();const form=document.querySelector('#place-form');form.querySelector('[name="start"]').value=start;form.requestSubmit();};
-    const press=(id,mods={})=>{const el=document.querySelector('[data-appointment="'+id+'"]'),r=el.getBoundingClientRect();el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,button:0,clientX:r.left+20,clientY:r.top+12,...mods}));if(!mods.ctrlKey&&!mods.shiftKey)document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));};
+    const press=(id,mods={})=>{const el=document.querySelector('[data-appointment="'+id+'"]'),r=el.getBoundingClientRect();el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,button:0,clientX:r.left+20,clientY:r.top+12,...mods}));document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true}));};
     const header=()=>document.querySelector('.inspector-header span')?.textContent;
     const change=(key,value)=>{const el=document.querySelector('.inspector [data-field="'+key+'"]');assert(el,'No field '+key);if(el.type==='checkbox')el.checked=value;else el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}));};
     if(appts().length<3){place(0,'09:00');place(0,'10:00');place(1,'11:00');}

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {makeDay,newProject,ensureStays,validateProject,clone} from '../domain.mjs';
-import {buildSlots,checkSettings,describeCause,describeLoad,estimateLoad,normalizeGroups,normalizeSettings,planDay,poolKey,procedurePools,resolveSettings,saveWeekdaySettings} from '../autofill.mjs';
+import {buildSlots,checkSettings,describeCause,describeLoad,estimateLoad,normalizeGroups,normalizeSettings,planDay,poolKey,procedurePools,composeSettings,normalizePlan,resolvePlan,savePlan,upgradeAutofill,rulesOf,ruleError} from '../autofill.mjs';
 import {workdayEnd} from '../domain.mjs';
 
 const seeded=seed=>()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};
@@ -125,7 +125,7 @@ test('locked appointments count toward the limit; empty and invalid limits',()=>
   const ctx=setup(2,procedures,s=>{s.rows['кушетка'].limit=1;});
   ctx.day.appointments=[appointment('lock','p0',procedures[0],540,{locked:true})];
   assert.notEqual(run(ctx).place[0].start,540);
-  ctx.settings.rows['кушетка'].limit=0;assert.match(checkSettings(ctx.settings,procedures,ctx.day)[0],/максимум/);
+  ctx.settings.rows['кушетка'].limit=0;assert.match(checkSettings(ctx.settings,procedures,ctx.day)[0],/всего одновременно/);
   ctx.settings.rows['кушетка'].limit=null;assert.deepEqual(checkSettings(ctx.settings,procedures,ctx.day),[]);
   assert.equal(run(ctx).place[0].start,540,'no limit: the other instructor works in parallel');
 });
@@ -204,15 +204,15 @@ test('settings errors block generation',()=>{
   settings.instructors['Массаж|m:m'].to='9 утра';assert.match(checkSettings(settings,procedures,day)[0],/ЧЧ:ММ/);
   settings.instructors['Массаж|m:m'].to='';settings.rows['массаж'].enabled=false;assert.match(checkSettings(settings,procedures,day)[0],/хотя бы одну/);
 });
-test('settings are remembered per weekday, new weekdays inherit, and projects still validate',()=>{
+test('the day plan is remembered per weekday, new weekdays inherit, and projects still validate',()=>{
   const p=ensureStays(newProject(true)),date='2026-11-09',nextMonday='2026-11-16',tuesday='2026-11-10',bands=[{name:'Обед'}];
-  const first=resolveSettings(undefined,date,p.procedures,bands);assert.equal(first.saved,false);assert.equal(first.settings.blockedBands['Обед'],true);
-  first.settings.rows[poolKey(p.procedures[0].name)].enabled=false;
-  const stay=p.stays[0];stay.autofill=saveWeekdaySettings(stay.autofill,date,first.settings,[{a:'x',b:'y',simultaneous:true}],[{id:'common',name:'Общая',values:{}}]);
+  const first=resolvePlan(undefined,date,p.procedures,bands);assert.equal(first.saved,false);assert.equal(first.plan.blockedBands['Обед'],true);
+  first.plan.off=[p.procedures[0].id];
+  const stay=p.stays[0];stay.autofill=savePlan(stay.autofill,date,first.plan,[{id:'common',name:'Общая',values:{}}]);
   const restored=validateProject(JSON.parse(JSON.stringify(p))).stays[0].autofill;
-  assert.equal(resolveSettings(restored,nextMonday,p.procedures,bands).saved,true);
-  const inherited=resolveSettings(restored,tuesday,p.procedures,bands);assert.equal(inherited.saved,false);assert.equal(inherited.settings.rows[poolKey(p.procedures[0].name)].enabled,false);
-  const broken=clone(p);broken.stays[0].autofill.links=[{a:1}];assert.throws(()=>validateProject(broken),/связка/);
+  assert.equal(resolvePlan(restored,nextMonday,p.procedures,bands).saved,true);
+  const inherited=resolvePlan(restored,tuesday,p.procedures,bands);assert.equal(inherited.saved,false);assert.deepEqual(inherited.plan.off,[p.procedures[0].id]);
+  const broken=clone(p);broken.stays[0].autofill.weekdays['1'].off='x';assert.throws(()=>validateProject(broken),/автозаполнения/);
 });
 test('each procedure uses its own group: the same patients can share one procedure and not another',()=>{
   const procedures=[proc('Спорт','s'),proc('Эрготерапия','e')];
@@ -240,10 +240,10 @@ test('the common group always exists; older groups become its numbers',()=>{
   const added=normalizeGroups({groupList:[{id:'x',name:'Спорт',values:{}}]}).groupList;assert.equal(added[0].id,'common');
 });
 test('named groups are saved and validated',()=>{
-  const p=ensureStays(newProject(true)),stay=p.stays[0],settings=resolveSettings(undefined,'2026-11-09',p.procedures,[]).settings;
-  stay.autofill=saveWeekdaySettings({groups:{old:'x'},links:[],weekdays:{}},'2026-11-09',settings,[],[{id:'common',name:'Общая',values:{[p.patients[0].id]:3}}]);
+  const p=ensureStays(newProject(true)),stay=p.stays[0],plan=resolvePlan(undefined,'2026-11-09',p.procedures,[]).plan;
+  stay.autofill=savePlan({groups:{old:'x'},links:[],weekdays:{}},'2026-11-09',plan,[{id:'common',name:'Общая',values:{[p.patients[0].id]:3}}]);
   const saved=validateProject(JSON.parse(JSON.stringify(p))).stays[0].autofill;
-  assert.equal(saved.groupList[0].values[p.patients[0].id],3);assert.ok(!('groups' in saved),'old field goes away');
+  assert.equal(saved.groupList[0].values[p.patients[0].id],3);assert.ok(!('groups' in saved)&&!('links' in saved),'old fields go away');
   const broken=clone(p);broken.stays[0].autofill.groupList=[{id:1}];assert.throws(()=>validateProject(broken),/групп/);
   const zero=clone(p);zero.stays[0].autofill.groupList[0].values.a=0;assert.throws(()=>validateProject(zero),/групп/);
 });
@@ -310,7 +310,7 @@ test('the report names what got in the way',()=>{
   assert.deepEqual(causes(late),['hours']);
   assert.deepEqual(causes(setup(1,[proc('Массаж','m')],s=>{s.instructors['Массаж|m:m'].enabled=false;})),['no-instructor']);
   const limit=setup(40,[proc('Спорт','a'),proc('Спорт','b')],s=>{s.rows['спорт'].limit=1;});
-  assert.deepEqual(causes(limit),['limit']);assert.match(describeCause(run(limit).report.unplaced[0]).text,/максимум одновременно: 1/);
+  assert.deepEqual(causes(limit),['limit']);assert.match(describeCause(run(limit).report.unplaced[0]).text,/всего на процедуре одновременно»: 1/);
   assert.deepEqual(causes({...setup(1,[proc('К','y'),proc('Т','n')]),links:[{a:'к',b:'т',simultaneous:false}]}),['no-pair']);
   const crowded=setup(1,[proc('Массаж','m'),proc('Спорт','s')],s=>{s.instructors['Массаж|m:m'].to='10:00';});
   crowded.day.appointments=[appointment('l','p0',crowded.procedures[1],540,{locked:true})];
@@ -331,4 +331,61 @@ test('generation and the estimate take the working day end from the day',()=>{
   assert.equal(estimateLoad(ctx).rows['массаж'].fit,3);
   ctx.day.workEnd=500;assert.match(checkSettings(ctx.settings,ctx.procedures,ctx.day)[0],/раньше конца/);
   delete ctx.day.workEnd;assert.equal(workdayEnd(ctx.day),1050,'older days end at 17:30');
+});
+
+test('rules live on the procedure and the day plan only switches things on and off',()=>{
+  const massage={...proc('Массаж','m'),rules:{...rulesOf(),grid:false,gap:10,limit:2}},sport=proc('Спорт','s'),twin={...proc('Спорт','z'),id:'twin'};
+  const procedures=[massage,sport,twin],plan=normalizePlan({off:[sport.id,'gone'],partial:[massage.id],work:{'Спорт|s:s':{to:'12:00'}}},procedures,[{name:'Обед'}]);
+  assert.deepEqual(plan.off,[sport.id]);assert.equal(plan.work['Спорт|s:s'].to,'12:00');assert.equal(plan.work['Спорт|s:s'].enabled,true);
+  const {settings,links}=composeSettings(plan,procedures,[{a:massage.id,b:twin.id,simultaneous:true},{a:massage.id,b:sport.id,simultaneous:false},{a:'gone',b:sport.id,simultaneous:false}]);
+  assert.deepEqual([settings.rows['массаж'].grid,settings.rows['массаж'].gap,settings.rows['массаж'].limit],[false,10,2]);
+  assert.equal(settings.rows['спорт'].enabled,true,'one card of the pair is still on');
+  assert.equal(composeSettings({...plan,off:[sport.id,'twin']},procedures).settings.rows['спорт'].enabled,false);
+  assert.deepEqual([settings.mode,settings.partialKeys],['full',[]],'everything ticked rebuilds the day');
+  const part=composeSettings({...plan,off:[sport.id,'twin']},procedures).settings;
+  assert.deepEqual([part.mode,part.partialKeys],['partial',['массаж']],'a part goes into the free time');
+  assert.deepEqual(normalizePlan({mode:'partial',partial:[massage.id]},procedures).off.sort(),[sport.id,'twin'].sort(),'old partial plans keep their choice');
+  assert.deepEqual(links,[{a:'массаж',b:'спорт',simultaneous:true}],'one link per procedure, unknown ids dropped');
+  assert.deepEqual(checkSettings(settings,procedures,makeDay('2026-11-09',[]),links),[]);
+  massage.name='Массаж спины';
+  assert.equal(composeSettings(plan,procedures).settings.rows['массаж спины'].gap,10,'renaming keeps the rules');
+  assert.equal(ruleError('gap',300),'Укажите перерыв от 0 до 240 минут');assert.equal(ruleError('limit',null),null);assert.ok(ruleError('capacity',1));
+});
+test('old weekday settings move to procedure rules, project links and a day plan',()=>{
+  const p=ensureStays(newProject(true)),[a,b,c]=p.procedures,key=x=>x.name.trim().toLowerCase();
+  const row=(extra={})=>({enabled:true,grid:true,gap:5,together:'single',capacity:2,groupId:'common',limit:null,...extra});
+  p.stays[0].autofill={links:[{a:key(a),b:key(b),simultaneous:true},{a:'нет',b:key(c),simultaneous:false}],groups:{},lastWeekday:'1',weekdays:{
+    1:{start:540,end:1050,slot:60,mode:'partial',partialKeys:[key(c)],blockedBands:{'Обед':true},rows:{[key(a)]:row({grid:false,gap:999,limit:2}),[key(b)]:row({enabled:false,together:'any',capacity:4})},instructors:{x:{enabled:false,from:'',to:''}}},
+    2:{start:600,end:1050,slot:45,mode:'full',partialKeys:[],blockedBands:{},rows:{[key(a)]:row({grid:true})},instructors:{}}}};
+  validateProject(p);upgradeAutofill(p);validateProject(p);
+  assert.deepEqual([a.rules.grid,a.rules.gap,a.rules.limit],[false,5,2],'the last used weekday wins, bad values fall back');
+  assert.deepEqual([b.rules.together,b.rules.capacity],['any',4]);assert.equal(c.rules,undefined);
+  assert.deepEqual(p.links,[{a:a.id,b:b.id,simultaneous:true}]);
+  const monday=p.stays[0].autofill.weekdays[1];
+  assert.deepEqual([monday.off,monday.partial,monday.mode,monday.work.x.enabled],[[b.id],[c.id],'partial',false]);
+  assert.equal(p.stays[0].autofill.weekdays[2].slot,45);assert.ok(!('links' in p.stays[0].autofill)&&p.stays[0].autofill.groupList[0].id==='common');
+  const again=JSON.stringify(p);upgradeAutofill(p);assert.equal(JSON.stringify(p),again,'runs once');
+  const bad=clone(p);bad.procedures[0].rules.capacity=1;assert.throws(()=>validateProject(bad),/правила/);
+  const link=clone(p);link.links=[{a:'x',b:'x',simultaneous:false}];assert.throws(()=>validateProject(link),/связка/);
+});
+test('the repair pass closes idle time and never makes the result worse',()=>{
+  const procedures=['Массаж','Спорт','Эрго','Физио','Кушетка'].map((n,i)=>proc(n,'i'+i));
+  let better=0,same=0;
+  for(let seed=1;seed<=25;seed++){
+    const plain=planDay({...setup(8,procedures),rng:seeded(seed),attempts:1,improve:false}).report,fixed=planDay({...setup(8,procedures),rng:seeded(seed),attempts:1}).report;
+    assert.ok(fixed.unplaced.length<=plain.unplaced.length&&fixed.overtime<=plain.overtime,'seed '+seed);
+    assert.ok(fixed.windows<=plain.windows||fixed.overtime<plain.overtime,'seed '+seed+': '+plain.windows+' -> '+fixed.windows);
+    if(fixed.windows<plain.windows)better++;else same++;
+  }
+  assert.ok(better>=15,'repair should usually help: '+better+' of 25');
+});
+test('the repair pass places what did not fit at first and leaves locked and linked blocks alone',()=>{
+  const procedures=[proc('К','y'),proc('Т','y'),proc('Массаж','m')],links=[{a:'к',b:'т',simultaneous:false}];
+  const ctx={...setup(3,procedures),links};
+  ctx.day.appointments=[appointment('lock','p0',procedures[2],900,{locked:true})];
+  for(let seed=1;seed<=10;seed++){
+    const {place,remove}=planDay({...ctx,rng:seeded(seed),attempts:1});
+    assert.deepEqual(remove,[]);assert.ok(!place.some(p=>p.patientId==='p0'&&p.procedureId===procedures[2].id));
+    for(const id of ['p0','p1','p2']){const pair=place.filter(p=>p.patientId===id&&p.procedureId!==procedures[2].id).sort((x,y)=>x.start-y.start);assert.equal(pair.length,2);assert.ok(pair[1].start-(pair[0].start+pair[0].duration)<=35,'pair stays together');}
+  }
 });

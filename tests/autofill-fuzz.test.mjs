@@ -55,7 +55,7 @@ const over=(a,b)=>a.start<ends(b)&&b.start<ends(a);
 
 function check(s){
   const {procedures,day,settings,links,groupList}=s;
-  const plan=planDay({procedures,day,settings,links,groupList,rng:s.rng,attempts:4});
+  const plan=planDay({procedures,day,settings,links,groupList,rng:s.rng,attempts:3});
   const fail=message=>assert.fail(`seed ${s.seed}: ${message}`);
   const key=a=>poolKey(procedures.find(p=>p.id===a.procedureId)?.name??a.text);
   const enabled=new Set(day.columns.map(c=>c.patientId).filter(id=>!(day.disabledPatientIds||[]).includes(id)));

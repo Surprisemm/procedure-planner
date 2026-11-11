@@ -4,10 +4,10 @@ import {setupTextEditors,readTextStyles} from './text-editors.mjs';
 import {textStyle,fontCss,fitText,bandLabelLayout,layoutPeriodLabels} from './presentation.mjs';
 import {setupTimePickers} from './time-picker.mjs';
 import {uid,clone,hm,minutes,overlaps,localDate,durationFor,makeDay,newProject,issuesFor,validatePlacement,layoutAppointments,validateProject,upgradeDefaultPeriods,ensureStays,switchStay,createStay,copyScheduleDay,transferAppointment,transferAppointments,syncSharedRoster,removeSchedulePatient,isPatientEnabled,visibleColumns,setPatientEnabled,removeSchedule,TIME_GUTTER,addCalendarDays,stayDates,timeMarkIsClear,expandDayCanvas,clampedDropStart,updateProcedureTemplate,removeInstructor,instructorColor,exportEndTime,procedureDurationError,moveVisiblePatient,workdayEnd} from './domain.mjs';
-import {dateLabel,renderScheduleImage,downloadBlob} from './export.mjs';
-import {procedurePools,resolveSettings,saveWeekdaySettings,checkSettings,planDay,emptyAutofill,normalizeGroups,COMMON_GROUP,estimateLoad,describeLoad,describeCause} from './autofill.mjs';
+import {dateLabel,renderScheduleImage,downloadBlob,instructorDay} from './export.mjs';
+import {procedurePools,poolKey,resolvePlan,savePlan,composeSettings,rulesOf,ruleError,upgradeAutofill,checkSettings,planDay,emptyAutofill,normalizeGroups,COMMON_GROUP,estimateLoad,describeLoad,describeCause} from './autofill.mjs';
 
-const paths={lock:'M6 10V7a6 6 0 0 1 12 0v3M4 10h16v12H4z',unlock:'M6 10V7a6 6 0 0 1 11-3M4 10h16v12H4z',sparkles:'m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z',repeat:'M20 11a8 8 0 1 0-2.3 6.3M20 5v6h-6',down:'m6 9 6 6 6-6',up:'m6 15 6-6 6 6',plus:'M12 5v14M5 12h14',chevron:'m9 5 7 7-7 7',left:'m15 5-7 7 7 7',close:'m6 6 12 12M6 18 18 6',search:'m21 21-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',users:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M16 3a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-3.87M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0',settings:'M4 7h16M7 4v6M4 17h16M16 14v6',calendar:'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2',download:'M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5',upload:'M12 16V4m-5 5 5-5 5 5M4 17v4h16v-4',save:'M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12l4 4v12a2 2 0 0 1-2 2M17 21v-8H7v8M7 3v5h9V3',undo:'M3 10h11a6 6 0 0 1 0 12M3 10l5-5M3 10l5 5',redo:'M21 10H10a6 6 0 0 0 0 12M21 10l-5-5M21 10l-5 5',grip:'M8 5h.01M16 5h.01M8 12h.01M16 12h.01M8 19h.01M16 19h.01',trash:'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7',copy:'M9 9h12v12H9zM15 9V3H3v12h6',clock:'M12 8v4l3 2M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',panel:'M3 3h18v18H3zM8 3v18',info:'M12 11v6M12 7h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',band:'M3 6h18v12H3zM3 12h18',check:'m5 12 4 4L19 6',flower:'M5 6h14v4H5zM5 14h9v4H5z',mouse:'M5 3 19 12l-7 1-3 7z',image:'M3 3h18v18H3zM3 17l6-6 4 4 3-3 5 5M8 7h.01',more:'M5 12h.01M12 12h.01M19 12h.01',minus:'M5 12h14'};
+const paths={lock:'M6 10V7a6 6 0 0 1 12 0v3M4 10h16v12H4z',unlock:'M6 10V7a6 6 0 0 1 11-3M4 10h16v12H4z',sparkles:'m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z',repeat:'M20 11a8 8 0 1 0-2.3 6.3M20 5v6h-6',down:'m6 9 6 6 6-6',up:'m6 15 6-6 6 6',plus:'M12 5v14M5 12h14',chevron:'m9 5 7 7-7 7',left:'m15 5-7 7 7 7',close:'m6 6 12 12M6 18 18 6',search:'m21 21-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',users:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M16 3a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-3.87M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0',settings:'M4 7h16M7 4v6M4 17h16M16 14v6',calendar:'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2',download:'M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5',upload:'M12 16V4m-5 5 5-5 5 5M4 17v4h16v-4',save:'M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12l4 4v12a2 2 0 0 1-2 2M17 21v-8H7v8M7 3v5h9V3',undo:'M3 10h11a6 6 0 0 1 0 12M3 10l5-5M3 10l5 5',redo:'M21 10H10a6 6 0 0 0 0 12M21 10l-5-5M21 10l-5 5',grip:'M8 5h.01M16 5h.01M8 12h.01M16 12h.01M8 19h.01M16 19h.01',trash:'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7',copy:'M9 9h12v12H9zM15 9V3H3v12h6',clock:'M12 8v4l3 2M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',panel:'M3 3h18v18H3zM8 3v18',info:'M12 11v6M12 7h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',alert:'M12 7v6M12 17h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',band:'M3 6h18v12H3zM3 12h18',check:'m5 12 4 4L19 6',flower:'M5 6h14v4H5zM5 14h9v4H5z',mouse:'M5 3 19 12l-7 1-3 7z',image:'M3 3h18v18H3zM3 17l6-6 4 4 3-3 5 5M8 7h.01',more:'M5 12h.01M12 12h.01M19 12h.01',minus:'M5 12h14'};
 const icon=(name,cls='')=>`<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name]||paths.info}"/></svg>`;
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const palette=['#f7df88','#bddcc2','#f3b5ac','#a8d9ee','#d7cef0','#d8dfe8','#f4cda3','#dce7b8','#ffffff','#edf0f3'];
@@ -22,7 +22,7 @@ if(desktop?.window){desktop.window.getState().then(syncWindowControls);desktop.w
 document.documentElement.classList.toggle('desktop-app',!!desktop);
 let loadError='',loadWarning='',project;
 try {const loaded=desktop?desktop.storage.load():{data:localStorage.getItem(STORAGE)};if(loaded.error)throw Error(loaded.error);loadWarning=loaded.warning||'';project=loaded.data?upgradeDefaultPeriods(validateProject(JSON.parse(loaded.data))):newProject();}catch{project=newProject(false);loadError='Не удалось открыть локальное сохранение. Оно не перезаписано. Откройте резервный файл проекта.';}
-project=ensureStays(project);
+project=upgradeAutofill(ensureStays(project));
 let recovery=!!loadError,saved=!loadError;
 const ui={date:project.stays.find(s=>s.id===project.currentStayId)?.viewDate|| (project.days[localDate()]?localDate():Object.keys(project.days).sort().at(-1)||localDate()),selection:{type:'day'},applyProcedureToDay:false,search:'',sidebarTab:'patients',instructorSearch:'',zoom:1,left:true,right:true,mobileLeft:false,inspectorOverlay:false,library:true,undo:[],redo:[]};
 if(!project.days[ui.date])project.days[ui.date]=makeDay(ui.date,project.patients);
@@ -81,8 +81,8 @@ function schedule(){
   const headers=offsets.map(c=>{const p=project.patients.find(p=>p.id===c.patientId),style=textStyle(p,'name',{fontSize:11}),fit=fitText(measureContext,c.name,c.width-21,35,style);return `<div class="column-header ${ui.selection.type==='patient'&&ui.selection.id===c.patientId?'selected':''}" style="width:${c.width}px;background:${c.headerColor}" data-action="select-patient" data-id="${c.patientId}" data-patient="${c.patientId}" role="button" tabindex="0"><span class="name" style="${fontCss({...style,fontSize:fit.fontSize})};line-height:${fit.lineHeight}px">${fit.lines.map(esc).join('<br>')}</span><span class="house" style="${fontCss({...textStyle(p,'house',{fontSize:10}),fontSize:Math.min(13,textStyle(p,'house',{fontSize:10}).fontSize)})};line-height:15px">Домик ${esc(c.house||'—')}</span></div>`;}).join('');
   const lanes=offsets.map(c=>`<div class="patient-lane" data-lane="${c.patientId}" style="left:${c.x}px;width:${c.width}px;background-color:${c.color};background-size:100% ${60*scale}px,100% ${d.step*scale}px;background-position:0 -${(d.start%60)*scale}px,0 -${(d.start%d.step)*scale}px"></div>`).join('');
   const bands=d.bands.map(b=>`<div data-action="select-band" data-id="${b.id}" data-band="${b.id}" class="period-band ${ui.selection.type==='band'&&ui.selection.id===b.id?'selected':''}" style="top:${(b.start-d.start)*scale}px;height:${b.duration*scale}px;background:${b.color}" title="${esc(b.name)} · ${hm(b.start)}–${hm(b.start+b.duration)}"></div>`).join('');
-  const selectedSet=new Set(selectedIds());
-  const blocks=offsets.map(col=>layoutAppointments(d.appointments.filter(a=>a.patientId===col.patientId)).map(a=>{const width=(col.width-8)/a.tracks-2,style=textStyle(a,'text'),fit=fitText(measureContext,a.text,width-18,Math.max(8,a.duration*scale-24),style);return `<div class="appointment-group ${ui.selection.type==='appointment'&&ui.selection.id===a.id?'is-selected':''}" data-col="${col.patientId}"><div class="appointment ${selectedSet.has(a.id)?'selected':''} ${a.status==='cancelled'?'cancelled':''}" data-appointment="${a.id}" tabindex="0" role="button" aria-label="${esc(a.text)} ${hm(a.start)}–${hm(a.start+a.duration)}" title="${esc(a.text)} · ${hm(a.start)}–${hm(a.start+a.duration)}" style="left:${col.x+4+a.track*(width+2)}px;top:${(a.start-d.start)*scale+1}px;width:${width}px;height:${Math.max(6,a.duration*scale-2)}px;background:${a.color};color:${a.textColor};text-align:${a.align}"><span class="resize-handle top" data-resize="top"></span><div class="appointment-name" style="${fontCss({...style,fontSize:fit.fontSize})};line-height:${fit.lineHeight}px">${fit.lines.map(esc).join('<br>')}</div>${a.duration*scale>30?`<div class="appointment-time">${hm(a.start)}–${hm(a.start+a.duration)}</div>`:''}<span class="resize-handle bottom" data-resize="bottom"></span></div>${button('delete-selection','','trash','appointment-delete',`data-select-type="appointment" data-id="${a.id}" title="Удалить назначение" aria-label="Удалить назначение" style="left:${col.x+4+a.track*(width+2)+width-22}px;top:${(a.start-d.start)*scale+3}px"`)}${button('toggle-lock','',a.locked?'lock':'unlock','appointment-lock',`data-id="${a.id}" aria-label="${a.locked?'Снять блокировку':'Установить блокировку'}" aria-pressed="${!!a.locked}" title="${a.locked?'Снять блокировку':'Установить блокировку'}" style="left:${col.x+6+a.track*(width+2)}px;top:${(a.start-d.start)*scale+3}px"`)}</div>`;}).join('')).join('');
+  const selectedSet=new Set(selectedIds()),focus=ui.selection.type==='instructor'?ui.selection.id:null,names=!!project.display?.instructors;
+  const blocks=offsets.map(col=>layoutAppointments(d.appointments.filter(a=>a.patientId===col.patientId)).map(a=>{const width=(col.width-8)/a.tracks-2,style=textStyle(a,'text'),who=names&&a.instructorId&&a.duration*scale>44,fit=fitText(measureContext,a.text,width-18,Math.max(8,a.duration*scale-(who?37:24)),style);return `<div class="appointment-group ${ui.selection.type==='appointment'&&ui.selection.id===a.id?'is-selected':''}" data-col="${col.patientId}"><div class="appointment ${selectedSet.has(a.id)?'selected':''} ${a.status==='cancelled'?'cancelled':''} ${focus?(a.instructorId===focus?'instructor-match':'instructor-dim'):''}" data-appointment="${a.id}" tabindex="0" role="button" aria-label="${esc(a.text)} ${hm(a.start)}–${hm(a.start+a.duration)}" title="${esc(a.text)} · ${hm(a.start)}–${hm(a.start+a.duration)}" style="left:${col.x+4+a.track*(width+2)}px;top:${(a.start-d.start)*scale+1}px;width:${width}px;height:${Math.max(6,a.duration*scale-2)}px;background:${a.color};color:${a.textColor};text-align:${a.align}"><span class="resize-handle top" data-resize="top"></span><div class="appointment-name" style="${fontCss({...style,fontSize:fit.fontSize})};line-height:${fit.lineHeight}px">${fit.lines.map(esc).join('<br>')}</div>${a.duration*scale>30?`<div class="appointment-time">${hm(a.start)}–${hm(a.start+a.duration)}</div>`:''}${who?`<div class="appointment-instructor">${esc(instructorName(a.instructorId))}</div>`:''}<span class="resize-handle bottom" data-resize="bottom"></span></div>${button('delete-selection','','trash','appointment-delete',`data-select-type="appointment" data-id="${a.id}" title="Удалить назначение" aria-label="Удалить назначение" style="left:${col.x+4+a.track*(width+2)+width-22}px;top:${(a.start-d.start)*scale+3}px"`)}${button('toggle-lock','',a.locked?'lock':'unlock','appointment-lock',`data-id="${a.id}" aria-label="${a.locked?'Снять блокировку':'Установить блокировку'}" aria-pressed="${!!a.locked}" title="${a.locked?'Снять блокировку':'Установить блокировку'}" style="left:${col.x+6+a.track*(width+2)}px;top:${(a.start-d.start)*scale+3}px"`)}</div>`;}).join('')).join('');
   const hours=Array.from({length:Math.max(0,Math.ceil(d.end/60)-Math.ceil(d.start/60))},(_,i)=>`<div class="hour-gridline" style="top:${((Math.ceil(d.start/60)+i)*60-d.start)*scale}px"></div>`).join('');
   return `<div class="schedule-table" style="width:${Math.max(w,260)}px"><div class="schedule-header"><div class="date-corner" data-action="day-settings"><strong>${dt.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'})}</strong><span>${dt.toLocaleDateString('ru-RU',{weekday:'long'})}</span></div>${headers}</div><div class="timeline" style="height:${h}px"><div class="time-axis">${labels}${gutterBands(d,scale)}</div><div class="lanes" id="lanes">${hours}${lanes}${bands}${blocks}${workdayLine(d,scale,h)}</div></div></div>`;
 }
@@ -136,6 +136,7 @@ function multiInspector(){
 function inspector(){if(ui.selection.type==='appointments')return multiInspector();const s=ui.selection,o=getSelection(),d=day();if(!o){ui.selection={type:'day'};return inspector();}const labels={day:'Настройки дня',patient:'Пациент',procedure:'Вид процедуры',appointment:'Процедура',band:'Общий период',cell:'Область',instructor:'Инструктор'};let content='';
   if(s.type==='day'){
     content=section('Расписание',`${field('Название','scheduleName',project.stays.find(s=>s.id===project.currentStayId).name)}`)+section('Сетка',`${field('Начало сетки','start',hm(d.start),'time')}${field('Конец рабочего дня','workEnd',hm(workdayEnd(d)),'time')}${selectField('Шаг сетки','step',d.step,[[1,'1 минута'],[5,'5 минут'],[10,'10 минут'],[15,'15 минут']])}`)
+      +section('Вид',`<label class="checkbox-field rule-check"><input type="checkbox" data-display="instructors" ${project.display?.instructors?'checked':''}>Инструктор на блоках</label>`)
       +section('Общие периоды',`<div class="period-list">${d.bands.map(b=>`<button class="period-row" data-action="select-band" data-id="${b.id}"><span class="dot" style="background:${b.color}"></span>${esc(b.name)}<span>${hm(b.start)}–${hm(b.start+b.duration)}</span></button>`).join('')}</div><div style="margin-top:10px">${button('add-band','Добавить период','plus','btn ghost')}</div>`)
 ;
   }
@@ -146,9 +147,9 @@ function inspector(){if(ui.selection.type==='appointments')return multiInspector
       +section('Дополнительно',`<label class="checkbox-field appointment-lock-field"><input type="checkbox" data-field="locked" ${o.locked?'checked':''}>Блокировка</label>${selectField('Статус','status',o.status,[['planned','Запланировано'],['cancelled','Отменено · зачеркнуть']])}`)
       +`<div class="inspector-actions">${button('duplicate','Дублировать','copy')}${button('transfer-appointment','В другой день…','calendar')}${button('delete-selection','Удалить назначение','trash','btn danger')}</div>`;
   }
-  if(s.type==='procedure')content=section('Процедура',`${field('Название','name',o.name)}<div class="field-grid main-colors">${colorField('Фон','color',o.color)}${colorField('Текст','textColor',o.textColor)}</div>${procedureInstructorsField(o)}${field('Длительность по умолчанию, мин','duration',o.duration??55,'number',`min="${d.step}" max="480" step="${d.step}"`)}<label class="checkbox-field procedure-sync"><input type="checkbox" id="apply-procedure-day" ${ui.applyProcedureToDay?'checked':''}>Применять к процедурам текущего дня</label>`)
+  if(s.type==='procedure')content=section('Процедура',`${field('Название','name',o.name)}<div class="field-grid main-colors">${colorField('Фон','color',o.color)}${colorField('Текст','textColor',o.textColor)}</div>${procedureInstructorsField(o)}${field('Длительность по умолчанию, мин','duration',o.duration??55,'number',`min="${d.step}" max="480" step="${d.step}"`)}<label class="checkbox-field procedure-sync"><input type="checkbox" id="apply-procedure-day" ${ui.applyProcedureToDay?'checked':''}>Применять к процедурам текущего дня</label>`)+procedureRulesSection(o)
     +`<div class="inspector-actions">${button('place-procedure','Назначить без перетаскивания','plus')}${button('delete-selection','Удалить из библиотеки','trash','btn danger')}</div>`;
-  if(s.type==='instructor')content=section('Инструктор',field('ФИО','name',o.name,'text','maxlength="140" data-plain-text'))+`<div class="inspector-actions">${button('remove-instructor','Удалить инструктора','trash','btn danger',`data-id="${o.id}"`)}</div>`;
+  if(s.type==='instructor'){const own=d.appointments.filter(a=>a.instructorId===o.id&&isPatientEnabled(d,a.patientId)).sort((a,b)=>a.start-b.start);content=section('Инструктор',field('ФИО','name',o.name,'text','maxlength="140" data-plain-text'))+section(`В этом дне: ${own.length}`,own.length?`<div class="instructor-day">${own.map(a=>`<button type="button" data-action="goto-appointment" data-id="${a.id}"><span>${hm(a.start)}–${hm(a.start+a.duration)}</span><strong>${esc(a.text)}</strong><small>${esc(d.columns.find(c=>c.patientId===a.patientId)?.name||'')}</small></button>`).join('')}</div>`:'<div class="inspector-empty">Нет процедур</div>')+`<div class="inspector-actions">${button('remove-instructor','Удалить инструктора','trash','btn danger',`data-id="${o.id}"`)}</div>`;}
   if(s.type==='patient'){
     const p=project.patients.find(p=>p.id===s.id),col=d.columns.find(c=>c.patientId===s.id);
     content=section('Карточка пациента',`${field('ФИО','name',o.name)}${field('Домик','house',o.house)}${col?`<div class="field-grid main-colors">${colorField('Заголовок','headerColor',col.headerColor)}${colorField('Фон колонки','color',col.color)}</div>`:''}`)
@@ -200,26 +201,26 @@ function confirmAction(title,text,label,onConfirm){openModal(title,`<div class="
 const helpPages=[
   {title:'Создайте расписание',text:'Нажмите + рядом с «Расписания». Введите название и даты заезда. По умолчанию — 28 дней.',image:'schedule',alt:'Кнопка плюс в списке расписаний'},
   {title:'Добавьте пациентов',text:'Нажмите + рядом с «Пациенты». Укажите имя и домик. Галочка включает пациента в выбранном дне. Если её снять, процедуры пациента в этом дне удалятся. Колонки в таблице можно менять местами, перетаскивая заголовок.',image:'patients',alt:'Список пациентов с кнопкой добавления и галочками'},
-  {title:'Добавьте инструкторов',text:'Откройте вкладку «Инструктора» рядом с пациентами. Добавляйте по одному через + или сразу списком. Справочник общий для всех расписаний.',image:'instructors',alt:'Вкладка инструкторов с кнопкой добавления'},
+  {title:'Добавьте инструкторов',text:'Откройте вкладку «Инструктора» рядом с пациентами. Добавляйте по одному через + или сразу списком. Справочник общий для всех расписаний. Щелчок по инструктору подсвечивает его процедуры в таблице и показывает его день справа.',image:'instructors',alt:'Вкладка инструкторов с кнопкой добавления'},
   {title:'Подготовьте процедуры',text:'Внизу нажмите «+ Процедура». Задайте название и длительность: она должна быть кратна шагу сетки. При наведении на карточку появляются кнопки «Дублировать» и «Удалить».',image:'library',alt:'Библиотека процедур и кнопка добавления'},
   {title:'Укажите инструкторов процедуры',text:'Выберите карточку и справа в «Инструкторы» нажмите +. У процедуры может быть несколько инструкторов, у каждого свой цвет. Цвет первого совпадает с фоном процедуры.',image:'procedure',alt:'Список инструкторов и их цветов в инспекторе процедуры'},
   {title:'Расставьте карточки как удобно',text:'Перетащите карточку вдоль библиотеки: соседние плавно сдвинутся, порядок сохранится. Если вынести карточку на сетку, процедура поставится в расписание.',image:'library-drag',alt:'Карточка перетаскивается вдоль библиотеки, соседние сдвигаются'},
   {title:'Заполните нужный день',text:'Выберите вкладку дня. Перетащите процедуру из библиотеки в колонку пациента на нужное время. Потяните край блока, чтобы изменить длительность.',image:'days',alt:'Вкладки дней и процедуры на временной сетке'},
-  {title:'Настройте через инспектор',text:'Нажмите на пациента, процедуру или полосу периода. Справа меняйте текст, оформление, время и инструктора. При наведении на блок появляются замочек и корзинка. Ctrl или Shift + щелчок выделяет несколько блоков: их можно перетащить вместе, а в инспекторе изменить сразу все. Esc снимает выделение и открывает настройки дня: начало сетки и конец рабочего дня.',image:'inspector',alt:'Свойства выбранной процедуры в инспекторе'},
-  {title:'Заполните день автоматически',text:'«Автозаполнение» само расставит выбранные процедуры всем пациентам дня с учётом инструкторов, обеда и ваших условий. Понравившееся закрепляйте замочком, остальное пересоставляйте кнопкой ↻. Подробности — по значку ⓘ внутри окна автозаполнения.',image:'autofill-button',alt:'Кнопка автозаполнения и кнопка повтора'},
-  {title:'Сохраните результат в PNG',text:'Нажмите «Сохранить PNG» вверху. Конец времени подставится по последней процедуре, при необходимости поменяйте. Проверьте изображение и сохраните. Готовое расписание — PNG-файл.',image:'export',alt:'Окно экспорта расписания с предварительным просмотром'}
+  {title:'Настройте через инспектор',text:'Нажмите на пациента, процедуру или полосу периода. Справа меняйте текст, оформление, время и инструктора. При наведении на блок появляются замочек и корзинка. Ctrl или Shift + щелчок выделяет несколько блоков, а рамка мышью с пустого места сетки — сразу группу: их можно перетащить вместе, а в инспекторе изменить сразу все. Ctrl+C и Ctrl+V копируют блоки, в том числе в другой день; перетаскивание с Ctrl оставляет копию. Esc снимает выделение и открывает настройки дня: начало сетки и конец рабочего дня.',image:'inspector',alt:'Свойства выбранной процедуры в инспекторе'},
+  {title:'Заполните день автоматически',text:'«Автозаполнение» само расставит выбранные процедуры всем пациентам дня с учётом инструкторов, обеда и ваших условий. Понравившееся закрепляйте замочком, остальное пересоставляйте кнопкой ↻. Правила процедуры задаются один раз в её свойствах. Подробности — по значку ⓘ внутри окна автозаполнения.',image:'autofill-button',alt:'Кнопка автозаполнения и кнопка повтора'},
+  {title:'Сохраните результат в PNG',text:'Нажмите «Сохранить PNG» вверху. Конец времени подставится по последней процедуре, при необходимости поменяйте. Проверьте изображение и сохраните. Готовое расписание — PNG-файл. Там же можно сохранить расписание по инструкторам и сразу несколько дней в папку.',image:'export',alt:'Окно экспорта расписания с предварительным просмотром'}
 ];
 const autofillPages=[
-  {title:'Что делает автозаполнение',image:'autofill-result',alt:'Составленное автоматически расписание дня',text:'Составляет расписание открытого дня: ставит каждому включённому пациенту все отмеченные процедуры и следит, чтобы никто не оказался в двух местах сразу.',list:['Перебирает много вариантов и берёт лучший: сначала всё поставлено, затем меньше выхода за конец дня, раньше окончание и меньше окон.','Ручное редактирование ничем не ограничено: правила действуют только для генератора.']},
-  {title:'Как с ним работать',image:'autofill-button',alt:'Кнопка автозаполнения и кнопка повтора',text:'Работа идёт по кругу: настроить, составить, закрепить удачное, составить снова.',list:['<b>Автозаполнение</b> открывает эти настройки. Они запоминаются для каждого дня недели: в следующий понедельник вернутся настройки понедельника.','<b>↻</b> сразу строит новый вариант с теми же настройками, без окна.','<b>Ctrl+Z</b> отменяет результат одним шагом.']},
-  {title:'Режим и рабочее время',image:'autofill-day',alt:'Блок с режимом, временем и периодами',text:'Верхний блок задаёт общие условия дня.',list:['<b>Весь набор</b> заменяет все назначения дня без замочка. <b>На свободное место</b> — об этом отдельный шаг.','<b>Начало</b> — раньше ничего не ставится. <b>Конец дня</b> задаётся в настройках дня в инспекторе и отмечен в таблице полоской. Это ориентир: что не влезло, уходит позже него, но не дальше 24:00.','<b>Слот</b> — шаг для процедур по сетке: при 60 минутах это 09:00, 10:00 и так далее.','<b>Не ставить на</b> — периоды, которые нельзя занимать. После них слоты считаются заново: например, с 13:30.']},
-  {title:'Какие процедуры и кто работает',image:'autofill-procedures',alt:'Таблица процедур и инструкторов',text:'Здесь вы отмечаете, что будет в этот день и кто сегодня на месте. Оценка нагрузки сверху и под названием сразу показывает, сколько сеансов нужно и сколько помещается.',list:['<b>Галочка у названия</b> — процедура нужна всем включённым пациентам. Нет спорта сегодня — снимите её.','<b>Галочка у инструктора</b> — он сегодня работает. Несколько инструкторов работают параллельно, пациенту нужна одна такая процедура.','<b>С и до</b> — когда инструктор занят этой процедурой: например, массаж до 14:00, а АФК после. Что не влезло в «до», не ставится и попадает в итог.','Инструктор никогда не вернётся к прежней процедуре: цепочки «массаж, АФК, массаж» не будет. Без полей «с» и «до» порядок выбирает генератор.']},
-  {title:'Условия для каждой процедуры',image:'autofill-rules',alt:'Таблица процедур с настроенными условиями',text:'Остальные колонки уточняют, как ставить процедуру.',list:['<b>Макс.</b> — сколько пациентов может быть на ней одновременно у всех инструкторов. Кушеток две — укажите 2, и третьего пациента поставят на другое время или процедуру.','<b>По сетке</b> — старт только на слотах. Без галочки — любое время по шагу с указанным перерывом. Галочка в заголовке меняет сразу все строки.','<b>Пациенты</b>: «Поодиночке» — один пациент у инструктора; «Совместно» — любые пациенты, до указанного числа; «По группам» — только с одинаковым номером в выбранной группе.']},
-  {title:'Связки: две процедуры подряд',image:'autofill-links',alt:'Блок связок процедур',text:'Связка не даёт разорвать процедуры, которые должны идти друг за другом, например АФК · кушетка и АФК · тренажёр.',list:['Нажмите + и выберите две процедуры. Порядок любой: кушетка, затем тренажёр, или наоборот.','Обе идут у одного инструктора, между ними ничего не встанет, обед их не разрывает.','<b>Инструктор может вести обе сразу</b> — один инструктор одновременно ведёт одного пациента на кушетке и другого на тренажёре.','Если половина закреплена замочком, вторая встанет рядом. Нет места — итог сообщит.']},
-  {title:'Группы: кто с кем может идти',image:'autofill-groups',alt:'Таблица групп с номерами пациентов',text:'Группа — это набор номеров. Пациенты с одинаковым номером могут идти вместе, с разными — нет. Без номера пациент идёт один.',list:['Нажмите + и назовите группу, например «Спорт». «Общая» есть всегда.','У каждого пациента в каждой группе свой номер: можно идти вместе на спорт, но отдельно на эрготерапию.','В строке процедуры выберите «По группам» и нужную группу.','Одинаковый номер разрешает, но не обязывает: если раздельно день заканчивается раньше, генератор поставит раздельно.']},
+  {title:'Что делает автозаполнение',image:'autofill-result',alt:'Составленное автоматически расписание дня',text:'Составляет расписание открытого дня: ставит каждому включённому пациенту все отмеченные процедуры и следит, чтобы никто не оказался в двух местах сразу.',list:['Строит много вариантов, каждый улучшает перестановками и берёт лучший: сначала всё поставлено, затем меньше выхода за конец дня, раньше окончание и меньше окон у пациентов.','Ручное редактирование ничем не ограничено: правила действуют только для генератора.']},
+  {title:'Как с ним работать',image:'autofill-button',alt:'Кнопка автозаполнения и кнопка повтора',text:'Работа идёт по кругу: отметить, что сегодня есть, составить, закрепить удачное, составить снова.',list:['<b>Автозаполнение</b> открывает настройки дня. Они запоминаются для каждого дня недели: в следующий понедельник вернутся настройки понедельника.','<b>↻</b> сразу строит новый вариант с теми же настройками, без окна.','<b>Сохранить</b> запоминает настройки без составления. <b>Ctrl+Z</b> отменяет результат одним шагом.']},
+  {title:'Рабочее время',image:'autofill-day',alt:'Блок со временем и периодами',text:'Верхний блок задаёт общие условия дня.',list:['<b>Начало</b> — раньше ничего не ставится. <b>Конец дня</b> задаётся в настройках дня в инспекторе и отмечен в таблице полоской. Это ориентир: что не влезло, уходит позже него, но не дальше 24:00.','<b>Слот</b> — шаг для процедур по сетке: при 60 минутах это 09:00, 10:00 и так далее.','<b>Не ставить на</b> — периоды, которые нельзя занимать. После них слоты считаются заново: например, с 13:30.']},
+  {title:'Какие процедуры и кто работает',image:'autofill-procedures',alt:'Список процедур с инструкторами и правилами',text:'В окне остаётся только то, что меняется от дня ко дню. Оценка нагрузки сверху и под названием сразу показывает, сколько сеансов нужно и сколько помещается.',list:['<b>Галочка у названия</b> — процедура нужна всем включённым пациентам. Нет спорта сегодня — снимите её.','<b>Все процедуры</b> отмечены — день составляется заново, все назначения без замочка заменяются.','<b>Галочка у инструктора</b> — он сегодня работает. Несколько инструкторов работают параллельно, пациенту нужна одна такая процедура.','<b>С и до</b> — когда инструктор занят этой процедурой. Что не влезло в «до», не ставится и попадает в итог.','Справа — правила процедуры одной строкой. «Изменить» сохраняет настройки и открывает её свойства.']},
+  {title:'По инструкторам: смена одной строкой',image:'autofill-instructors',alt:'Список инструкторов с их процедурами и временем',text:'Переключатель «По инструкторам» показывает те же настройки с другой стороны: у каждого инструктора его процедуры и время.',list:['Так удобно задавать смену: массаж с 09:00 до 14:00, АФК с 14:00.','Галочка у имени включает или выключает инструктора на весь день сразу.','Инструктор никогда не вернётся к прежней процедуре: цепочки «массаж, АФК, массаж» не будет. Без полей «с» и «до» порядок выбирает генератор.']},
+  {title:'Правила процедуры: один раз в её свойствах',image:'autofill-rules',alt:'Раздел «Автозаполнение» в свойствах процедуры',text:'То, что не меняется изо дня в день, задаётся в свойствах процедуры: выберите карточку в библиотеке и найдите справа раздел «Автозаполнение».',list:['<b>По сетке</b> — старт только на слотах. Без галочки — любое время по шагу с указанным перерывом.','<b>Пациенты</b>: «Поодиночке», «Совместно» — любые пациенты, «По группам» — только с одинаковым номером в выбранной группе. <b>У одного инструктора, не больше</b> — сколько пациентов один инструктор ведёт в одном занятии.','<b>Всего на процедуре одновременно</b> — сколько пациентов может быть на процедуре сразу у всех инструкторов вместе: места или оборудование. Кушеток две — укажите 2. Если инструктор один, хватает первого поля.','<b>Связка</b> ставит две процедуры подряд в любом порядке у одного инструктора, обед их не разрывает. «Инструктор ведёт обе сразу» — один инструктор ведёт одного пациента на кушетке и другого на тренажёре.']},
+  {title:'Группы: кто с кем может идти',image:'autofill-groups',alt:'Таблица групп с номерами пациентов',text:'Группа — это набор номеров. Пациенты с одинаковым номером могут идти вместе, с разными — нет. Без номера пациент идёт один.',list:['Нажмите + и назовите группу, например «Спорт». «Общая» есть всегда.','У каждого пациента в каждой группе свой номер: можно идти вместе на спорт, но отдельно на эрготерапию.','В свойствах процедуры выберите «По группам» и нужную группу.','Одинаковый номер разрешает, но не обязывает: если раздельно день заканчивается раньше, генератор поставит раздельно.']},
   {title:'Замочек: закрепите удачное',image:'autofill-locks',alt:'Расписание с закреплёнными блоками',text:'Наведите курсор на блок и нажмите замочек. Закреплённый замочек виден всегда.',list:['Такой блок генератор не двигает. Он занимает время пациента и инструктора и считается выполненной процедурой.','Понравилось, как встали массажи? Закрепите их и нажмите ↻: остальное составится заново вокруг них.','Для ручного редактирования замочек ничего не запрещает.']},
-  {title:'На свободное место: по частям',image:'autofill-partial',alt:'Окно автозаполнения в режиме «На свободное место»',text:'Этот режим ставит процедуры партиями: сначала АФК, потом массаж, потом психолога. Замочки между шагами не нужны.',list:['Переключите режим вверху и отметьте только то, что ставите сейчас. У этого режима свои галочки.','Остальные назначения остаются на месте и занимают время.','Повторный запуск переставит заново только выбранную процедуру. Замочки по-прежнему в приоритете.']},
-  {title:'Если что-то не поместилось',image:'autofill-report',alt:'Итог автозаполнения со списком непоставленных процедур',text:'Генератор старается поставить всё. Если рабочего дня не хватает, процедуры уходят за конец дня: таблица расширится, а итог покажет сколько таких.',list:['Если не хватило даже суток или времени инструктора, появится список: что не поставлено, у кого и что помешало, например занятый инструктор, поле «до» или лимит «Макс.».','Под каждой причиной написано, что можно поменять.','Остальное можно поправить вручную: блоки перетаскиваются как обычно.']}
+  {title:'Часть процедур: на свободное место',image:'autofill-partial',alt:'Окно автозаполнения, отмечена одна процедура',text:'Процедуры можно ставить партиями: сначала АФК, потом массаж, потом психолога. Замочки между шагами не нужны.',list:['Снимите «Все процедуры» и отметьте только то, что ставите сейчас.','Остальные назначения остаются на месте и занимают время.','Повторный запуск переставит заново только выбранную процедуру. Замочки по-прежнему в приоритете.']},
+  {title:'Если что-то не поместилось',image:'autofill-report',alt:'Итог автозаполнения со списком непоставленных процедур',text:'Генератор старается поставить всё. Если рабочего дня не хватает, процедуры уходят за конец дня: таблица расширится, а итог покажет сколько таких.',list:['Если не хватило даже суток или времени инструктора, появится список: что не поставлено, у кого и что помешало, например занятый инструктор, поле «до» или лимит.','Под каждой причиной написано, что можно поменять.','Остальное можно поправить вручную: блоки перетаскиваются как обычно.']}
 ];
 let helpDeck={pages:helpPages,title:'Как работать с программой',cls:'tutorial-dialog',done:null};
 function showHelp(page=0){
@@ -241,7 +242,7 @@ function makeAppointment(procedure,patientId,start,instructorId=procedure.instru
 function placeForm(procedureId=null,cell=null){if(!visibleColumns(day()).length){toast('Сначала включите пациента в этом дне',true);return;}if(!project.procedures.length){toast('Сначала создайте вид процедуры',true);return;}openModal('Назначить процедуру',`<form id="place-form" class="modal-body"><label class="field"><span class="field-label">Процедура</span><select name="procedure">${project.procedures.map(p=>`<option value="${p.id}" ${p.id===procedureId?'selected':''}>${esc(p.name)} · ${durationFor(p,day())} мин</option>`).join('')}</select></label><label class="field"><span class="field-label">Пациент</span><select name="patient">${visibleColumns(day()).map(c=>`<option value="${c.patientId}" ${c.patientId===cell?.patientId?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label><label class="field"><span class="field-label">Начало</span><input name="start" type="time" value="${hm(cell?.start??day().start)}" required></label><div class="error-text" id="modal-error"></div></form>`,`${button('close-modal','Отмена')}<button class="btn primary" form="place-form" type="submit">Назначить</button>`);modal.querySelector('form').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),p=project.procedures.find(p=>p.id===f.get('procedure')),a=makeAppointment(p,f.get('patient'),minutes(f.get('start'))),error=validatePlacement(day(),a);if(error){modal.querySelector('#modal-error').textContent=error;return;}modal.close();ui.selection={type:'appointment',id:a.id};transact(()=>day().appointments.push(a),'Процедура добавлена');};}
 function requestPatientRemoval(id){const patient=project.patients.find(p=>p.id===id&&!p.archived);if(!patient)return;const count=Object.values(project.days).reduce((n,d)=>n+d.appointments.filter(a=>a.patientId===id).length,0);confirmAction('Удалить пациента из расписания?',`${esc(patient.name)}. Пациент будет удалён из всех ${Object.keys(project.days).length} дней этого расписания. Его назначения: ${count}. Действие можно отменить. Другие расписания сохранятся.`,'Удалить из расписания',()=>{ui.selection={type:'day'};transact(()=>removeSchedulePatient(project,id),'Пациент удалён');});}
 function deleteSelection(){if(ui.selection.type==='appointments'){const ids=new Set(selectedIds());ui.selection={type:'day'};transact(()=>{day().appointments=day().appointments.filter(a=>!ids.has(a.id));},`Удалено процедур: ${ids.size}. Отменить — Ctrl+Z`);return;}const s=clone(ui.selection),o=getSelection();if(!o)return;
-  const remove=()=>{ui.selection={type:'day'};transact(()=>{if(s.type==='appointment')day().appointments=day().appointments.filter(a=>a.id!==s.id);if(s.type==='procedure')project.procedures=project.procedures.filter(p=>p.id!==s.id);if(s.type==='band')day().bands=day().bands.filter(b=>b.id!==s.id);if(s.type==='patient')removeSchedulePatient(project,s.id);},'Удалено');};
+  const remove=()=>{ui.selection={type:'day'};transact(()=>{if(s.type==='appointment')day().appointments=day().appointments.filter(a=>a.id!==s.id);if(s.type==='procedure'){project.procedures=project.procedures.filter(p=>p.id!==s.id);project.links=(project.links||[]).filter(l=>l.a!==s.id&&l.b!==s.id);}if(s.type==='band')day().bands=day().bands.filter(b=>b.id!==s.id);if(s.type==='patient')removeSchedulePatient(project,s.id);},'Удалено');};
   if(s.type==='patient')requestPatientRemoval(s.id);else if(s.type==='procedure')confirmAction('Удалить вид процедуры?',`«${esc(o.name)}» исчезнет из библиотеки. Размещённые назначения сохранятся.`,'Удалить вид',remove);else remove();
 }
 function selectFromButton(el){const {selectType:type,id}=el.dataset;if(type&&(ui.selection.type!==type||ui.selection.id!==id))select(type,id);}
@@ -265,10 +266,99 @@ function copyDay(){
   form.querySelector('#copy-next-week').onclick=()=>{date.value=addCalendarDays(source.value,7);reset();};update();
   form.onsubmit=e=>{e.preventDefault();if(!date.value||source.value===date.value||(needsConfirmation()&&!ack.checked)){update();return;}const success=transact(()=>{copyScheduleDay(project,source.value,date.value,{appointments:true,replace:true});ui.date=date.value;ui.selection={type:'day'};},'Расписание скопировано');if(success)modal.close();};
 }
-function exportModal(){if(!visibleColumns(day()).length){toast('Включите пациентов для экспорта этого дня',true);return;}openModal('Сохранить расписание',`<div class="modal-body"><div class="export-controls"><label class="field"><span class="field-label">Начало</span><input id="export-start" type="time" value="${hm(day().start)}"></label><label class="field"><span class="field-label">Конец</span><input id="export-end" type="time" value="${hm(exportEndTime(day()))}"></label><label class="field"><span class="field-label">Разрешение</span><select id="export-scale"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option></select></label><label class="field"><span class="field-label">Колонок в PNG</span><select id="export-columns"><option value="all">Все</option><option value="6">По 6</option><option value="10">По 10</option></select></label></div><div class="export-preview" id="export-preview"></div><div class="error-text" id="modal-error"></div></div>`,`${button('close-modal','Закрыть')}${button('refresh-export','Обновить просмотр','image')}${button('download-export','Сохранить PNG','download','btn primary')}`,'export-dialog');refreshExport();modal.querySelectorAll('.export-controls input,.export-controls select').forEach(e=>e.onchange=refreshExport);}
+// Copy and paste of blocks. Paste lands under the pointer when it is over the grid,
+// otherwise at the copied patients and times (right after the originals on the same day).
+let clipboard=null,hover=null;
+document.addEventListener('pointermove',e=>{hover={x:e.clientX,y:e.clientY};});
+function copySelection(){
+  const items=selectedAppointments();if(!items.length)return false;
+  const cols=visibleColumns(day()).map(c=>c.patientId);
+  clipboard={items:items.map(clone),cols:items.map(a=>cols.indexOf(a.patientId)),date:ui.date,stay:project.currentStayId};
+  toast(`Скопировано процедур: ${items.length}. Вставить — Ctrl+V`);return true;
+}
+function pasteClipboard(point=hover){
+  if(!clipboard?.items.length){toast('Сначала скопируйте процедуры: Ctrl+C',true);return;}
+  const d=day(),cols=visibleColumns(d).map(c=>c.patientId),{items,cols:idx}=clipboard;
+  if(!cols.length){toast('Сначала включите пациента в этом дне',true);return;}
+  const spot=point?pointerLocation(point.x,point.y):null;
+  let dt=0,dc=0;
+  if(spot){
+    const first=items.reduce((best,a,i)=>a.start<items[best].start||(a.start===items[best].start&&idx[i]<idx[best])?i:best,0);
+    dt=clampedDropStart(d,spot.minute,items[first].duration,0)-items[first].start;
+    dt=Math.max(Math.max(...items.map(a=>d.start-a.start)),Math.min(Math.min(...items.map(a=>1440-a.start-a.duration)),dt));
+    dc=Math.max(-Math.min(...idx),Math.min(cols.length-1-Math.max(...idx),cols.indexOf(spot.patientId)-idx[first]));
+  }
+  const after=!spot&&clipboard.date===ui.date&&clipboard.stay===project.currentStayId;
+  const trial={...d,appointments:[...d.appointments]},added=[];
+  for(const [i,a] of items.entries()){
+    const patientId=cols[idx[i]+dc];
+    if(!patientId){toast('Для вставки не хватает колонок пациентов',true);return;}
+    const next={...clone(a),id:uid(),patientId,start:a.start+dt+(after?a.duration:0)},error=validatePlacement(trial,next);
+    if(error){toast(error,true);return;}
+    trial.appointments.push(next);added.push(next);
+  }
+  ui.selection=added.length===1?{type:'appointment',id:added[0].id}:{type:'appointments',ids:added.map(a=>a.id)};
+  transact(()=>{day().appointments.push(...added);expandDayCanvas(day());},`Вставлено процедур: ${added.length}`);
+}
+
+// Export: one day or several, by patients or by instructors.
+let exportJobList=[];
+const safeFileName=name=>String(name).replace(/[<>:"/\\|?*\x00-\x1f]/g,' ').replace(/\s+/g,' ').trim()||'без имени';
+function exportModal(){
+  if(!visibleColumns(day()).length){toast('Включите пациентов для экспорта этого дня',true);return;}
+  const filled=Object.values(project.days).filter(d=>d.appointments.some(a=>isPatientEnabled(d,a.patientId))).length,dates=Object.keys(project.days).sort();
+  openModal('Сохранить расписание',`<div class="modal-body"><div class="export-controls"><label class="field"><span class="field-label">Вид</span><select id="export-view"><option value="patients">По пациентам</option><option value="instructors">По инструкторам: все</option>${project.instructors.map(i=>`<option value="instructor:${i.id}">Инструктор: ${esc(i.name)}</option>`).join('')}</select></label><label class="field"><span class="field-label">Дни</span><select id="export-days"><option value="current">Открытый день</option><option value="all">Все дни с процедурами (${filled})</option><option value="range">Период…</option></select></label><label class="field"><span class="field-label">Разрешение</span><select id="export-scale"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option></select></label><label class="field"><span class="field-label">Колонок в PNG</span><select id="export-columns"><option value="all">Все</option><option value="6">По 6</option><option value="10">По 10</option></select></label></div><div class="export-controls" id="export-time"><label class="field"><span class="field-label">Начало</span><input id="export-start" type="time" value="${hm(day().start)}"></label><label class="field"><span class="field-label">Конец</span><input id="export-end" type="time" value="${hm(exportEndTime(day()))}"></label></div><div class="export-controls" id="export-range" hidden><label class="field"><span class="field-label">С даты</span><input id="export-from" type="date" value="${dates[0]}"></label><label class="field"><span class="field-label">По дату</span><input id="export-to" type="date" value="${dates.at(-1)}"></label></div><label class="checkbox-field export-who"><input type="checkbox" id="export-who" ${project.display?.instructors?'checked':''}>Инструктор на блоках</label><p class="export-note" id="export-note"></p><div class="export-preview" id="export-preview"></div><div class="error-text" id="modal-error"></div></div>`,`${button('close-modal','Закрыть')}${button('refresh-export','Обновить просмотр','image')}${button('download-export','Сохранить PNG','download','btn primary')}`,'export-dialog');
+  refreshExport();modal.querySelectorAll('.export-controls input,.export-controls select,#export-who').forEach(e=>e.onchange=refreshExport);
+}
+function exportJobs(){
+  const q=id=>modal.querySelector(id),view=q('#export-view').value,mode=q('#export-days').value,scale=Number(q('#export-scale').value),per=q('#export-columns').value,single=mode==='current';
+  let dates=single?[ui.date]:Object.keys(project.days).sort();
+  if(mode==='range'){const from=q('#export-from').value,to=q('#export-to').value;if(!from||!to||from>to)throw Error('Укажите период: начало не позже конца');dates=dates.filter(date=>date>=from&&date<=to);}
+  const patientName=id=>project.patients.find(p=>p.id===id)?.name||'',jobs=[];
+  for(const date of dates){
+    const source=project.days[date];let d=source,title,suffix='';
+    if(view!=='patients'){
+      const busy=new Set(source.appointments.filter(a=>isPatientEnabled(source,a.patientId)).map(a=>a.instructorId)),one=view.startsWith('instructor:')?view.slice(11):null;
+      const list=project.instructors.filter(i=>one?i.id===one:busy.has(i.id));
+      d=instructorDay(source,list,patientName);
+      title=`${one?list[0]?.name||'Инструктор':'Инструктора'} · ${dateLabel(date)}`;suffix=one?`-${safeFileName(list[0]?.name||'инструктор')}`:'-инструкторы';
+    }
+    const columns=visibleColumns(d),has=d.appointments.some(a=>columns.some(c=>c.patientId===a.patientId));
+    if(!columns.length||(!single&&!has))continue;
+    const start=single?minutes(q('#export-start').value):d.start,end=single?minutes(q('#export-end').value):Math.max(exportEndTime(d),d.start+60);
+    if(!Number.isFinite(start)||!Number.isFinite(end)||start<0||end>1440||end<=start)throw Error('Выберите диапазон в пределах 00:00–23:59');
+    const size=per==='all'?columns.length:Number(per),parts=Math.ceil(columns.length/size);
+    for(let i=0;i<parts;i++)jobs.push({date,name:`Расписание-${date}${suffix}${parts>1?'-часть-'+(i+1):''}.png`,draw:()=>renderScheduleImage(d,{scale,start,end,columns:columns.slice(i*size,(i+1)*size),title,houses:view==='patients',instructorName:view==='patients'&&q('#export-who').checked?instructorName:null})});
+  }
+  if(!jobs.length)throw Error(single?'В этом дне нечего сохранять для выбранного вида':'В выбранных днях нет процедур');
+  return jobs;
+}
 let exportCanvases=[];
-function refreshExport(){try{const start=minutes(modal.querySelector('#export-start').value),end=minutes(modal.querySelector('#export-end').value),scale=Number(modal.querySelector('#export-scale').value),group=modal.querySelector('#export-columns').value==='all'?visibleColumns(day()).length:Number(modal.querySelector('#export-columns').value);if(!Number.isFinite(start)||!Number.isFinite(end)||start<0||end>1440||end<=start)throw Error('Выберите диапазон в пределах 00:00–23:59');const canvases=[];for(let i=0;i<visibleColumns(day()).length;i+=group)canvases.push(renderScheduleImage(day(),{scale,start,end,columns:visibleColumns(day()).slice(i,i+group)}));exportCanvases=canvases;const preview=modal.querySelector('#export-preview');preview.replaceChildren();canvases.forEach((c,i)=>{const wrapper=document.createElement('div');wrapper.className='export-page';wrapper.append(c);if(canvases.length>1){const b=document.createElement('button');b.className='btn';b.textContent=`Скачать часть ${i+1}`;b.onclick=()=>downloadCanvas(c,i);wrapper.append(b);}preview.append(wrapper);});modal.querySelector('#modal-error').textContent='';modal.querySelector('[data-action="download-export"]').disabled=false;}catch(e){exportCanvases=[];modal.querySelector('#modal-error').textContent=e.message;modal.querySelector('[data-action="download-export"]').disabled=true;}}
-function downloadCanvas(canvas,index){canvas.toBlob(async blob=>{if(!blob){toast('Не удалось создать PNG. Уменьшите разрешение.',true);return;}try{const result=await downloadBlob(blob,`Расписание-${ui.date}${exportCanvases.length>1?'-часть-'+(index+1):''}.png`);if(desktop&&!result?.canceled)toast('Изображение сохранено');}catch(error){toast('Не удалось сохранить PNG: '+error.message,true);}},'image/png');}
+function refreshExport(){
+  const single=modal.querySelector('#export-days').value==='current',view=modal.querySelector('#export-view').value;
+  modal.querySelector('#export-time').hidden=!single;modal.querySelector('#export-range').hidden=modal.querySelector('#export-days').value!=='range';modal.querySelector('.export-who').hidden=view!=='patients';
+  const save=modal.querySelector('[data-action="download-export"]'),note=modal.querySelector('#export-note');
+  try{
+    const jobs=exportJobs(),shown=jobs.filter(job=>job.date===jobs[0].date);exportJobList=jobs;
+    exportCanvases=shown.map(job=>job.draw());
+    const preview=modal.querySelector('#export-preview');preview.replaceChildren();
+    exportCanvases.forEach((canvas,i)=>{const wrapper=document.createElement('div');wrapper.className='export-page';wrapper.append(canvas);if(shown.length>1){const b=document.createElement('button');b.className='btn';b.textContent=`Скачать часть ${i+1}`;b.onclick=()=>downloadCanvas(canvas,shown[i].name);wrapper.append(b);}preview.append(wrapper);});
+    note.textContent=jobs.length>1?`Будет сохранено изображений: ${jobs.length}. ${single?'':`Показан первый день — ${dateLabel(jobs[0].date)}. Время каждого дня: от начала сетки до последней процедуры. `}Выберите папку при сохранении.`:'';
+    save.querySelector('span').textContent=jobs.length>1?`Сохранить PNG (${jobs.length})`:'Сохранить PNG';
+    modal.querySelector('#modal-error').textContent='';save.disabled=false;
+  }catch(e){exportJobList=[];exportCanvases=[];note.textContent='';modal.querySelector('#export-preview').replaceChildren();modal.querySelector('#modal-error').textContent=e.message;save.disabled=true;}
+}
+function downloadCanvas(canvas,name){canvas.toBlob(async blob=>{if(!blob){toast('Не удалось создать PNG. Уменьшите разрешение.',true);return;}try{const result=await downloadBlob(blob,name);if(desktop&&!result?.canceled)toast('Изображение сохранено');}catch(error){toast('Не удалось сохранить PNG: '+error.message,true);}},'image/png');}
+async function saveExport(){
+  const jobs=exportJobList;if(!jobs.length)return;
+  if(jobs.length===1){downloadCanvas(exportCanvases[0]||jobs[0].draw(),jobs[0].name);return;}
+  try{
+    const files=[];
+    for(const job of jobs){const blob=await new Promise(done=>job.draw().toBlob(done,'image/png'));if(!blob)throw Error('Не удалось создать PNG. Уменьшите разрешение.');files.push({name:job.name,bytes:new Uint8Array(await blob.arrayBuffer())});}
+    if(desktop){const result=await desktop.saveFiles({files});if(!result?.canceled)toast(`Сохранено изображений: ${result.count}`);}
+    else for(const file of files)await downloadBlob(new Blob([file.bytes],{type:'image/png'}),file.name);
+  }catch(error){toast('Не удалось сохранить PNG: '+error.message,true);}
+}
 
 function orderPatient(delta){const active=project.patients.filter(p=>!p.archived),index=active.findIndex(p=>p.id===ui.selection.id),next=index+delta;if(index<0||next<0||next>=active.length)return;transact(()=>{const first=project.patients.indexOf(active[index]),second=project.patients.indexOf(active[next]);[project.patients[first],project.patients[second]]=[project.patients[second],project.patients[first]];});}
 function batchPatients(){openModal('Добавить пациентов списком',`<form id="batch-form" class="modal-body"><label class="field"><span class="field-label">Пациенты</span><textarea name="patients" rows="8" required placeholder="Иванов Иван; 7&#10;Петрова Анна; 3" autofocus></textarea></label><div class="error-text" id="modal-error"></div></form>`,`${button('close-modal','Отмена')}<button type="submit" form="batch-form" class="btn primary">Добавить</button>`);modal.querySelector('form').onsubmit=e=>{e.preventDefault();const rows=new FormData(e.target).get('patients').split(/\r?\n/).filter(line=>line.trim());if(rows.length>200){modal.querySelector('#modal-error').textContent='Добавьте не более 200 пациентов за один раз';return;}const patients=rows.map(row=>{const [name,...house]=row.split(/[;\t]/);return {id:uid(),name:name.trim(),house:house.join(' ').trim(),archived:false};});if(patients.some(p=>!p.name)){modal.querySelector('#modal-error').textContent='Укажите имя для каждого пациента';return;}const styles=readTextStyles(e.target);for(const p of patients)p.textStyles=styles.patients?{name:styles.patients}:{};modal.close();transact(()=>project.patients.push(...patients),`Добавлено пациентов: ${patients.length}`);};}
@@ -305,7 +395,7 @@ const actions={
   'close-modal':()=>modal.close(),'undo':undo,'redo':redo,'delete-selection':el=>{selectFromButton(el);deleteSelection();},'duplicate':el=>{selectFromButton(el);duplicate();},
   'place-procedure':()=>placeForm(ui.selection.id),
   'save-project':saveProject,'open-project':async()=>{if(!desktop){document.querySelector('#project-file').click();return;}try{const result=await desktop.openProject();if(!result.canceled)loadImportedProject(result.data);}catch(error){toast('Не удалось открыть файл: '+error.message,true);}},'export':exportModal,'refresh-export':refreshExport,
-  'download-export':()=>{if(exportCanvases.length===1)downloadCanvas(exportCanvases[0],0);else toast('Скачайте каждую часть кнопкой под её изображением');},
+  'download-export':saveExport,
   'prev-day':()=>moveDate(localDate(new Date(new Date(ui.date+'T12:00:00').valueOf()-86400000))),
   'next-day':()=>moveDate(localDate(new Date(new Date(ui.date+'T12:00:00').valueOf()+86400000))),
   'patient-left':()=>orderPatient(-1),'patient-right':()=>orderPatient(1),'copy-day':copyDay,'new-day':()=>dayForm('structure'),'new-stay':()=>stayForm(),'rename-stay':()=>stayForm(true),'transfer-appointment':transferForm,
@@ -336,6 +426,7 @@ function showApptMenu(a,x,y){
   const proc=project.procedures.find(p=>p.id===a.procedureId),count=a.procedureId?day().appointments.filter(b=>b.procedureId===a.procedureId).length:0;
   const group=ui.selection.type==='appointments'&&selectedIds().includes(a.id)?selectedAppointments():null,unlock=group?group.every(b=>b.locked):!!a.locked;
   const items=[[group?`${unlock?'Снять блокировку':'Блокировать'} (${group.length})`:unlock?'Снять блокировку':'Блокировать',group?()=>transact(()=>{for(const b of group)day().appointments.find(x=>x.id===b.id).locked=!unlock;}):()=>actions['toggle-lock']({dataset:{id:a.id}})]];
+  items.push([group?`Копировать (${group.length})`:'Копировать',copySelection]);
   if(group)items.push([`Дублировать (${group.length})`,duplicate],[`В другой день… (${group.length})`,transferForm]);
   items.push([group?`Удалить выбранные (${group.length})`:'Удалить это назначение',group?deleteSelection:()=>{ui.selection={type:'appointment',id:a.id};deleteSelection();}]);
   if(a.procedureId)items.push([`Удалить все «${proc?.name||a.text}» в дне (${count})`,()=>removeAppointmentsOfProcedure(a.procedureId),true]);
@@ -347,12 +438,12 @@ function showProcedureMenu(p,x,y){
   select('procedure',p.id);
   showMenu([[`Выделить все в дне (${count})`,()=>{if(!count){toast('В этом дне нет процедур этого вида');return;}setAppointmentSelection(day().appointments.filter(a=>a.procedureId===p.id).map(a=>a.id));}],['Дублировать процедуру',duplicateProcedure],['Удалить из библиотеки',()=>{ui.selection={type:'procedure',id:p.id};deleteSelection();},true]],x,y);
 }
-document.addEventListener('contextmenu',e=>{const card=e.target.closest('[data-procedure]');if(card&&!e.target.closest('[data-appointment]')){const p=project.procedures.find(p=>p.id===card.dataset.procedure);if(!p)return;e.preventDefault();showProcedureMenu(p,e.clientX,e.clientY);return;}const el=e.target.closest('[data-appointment],.appointment-lock,.appointment-delete');if(!el)return;const id=el.dataset.appointment||el.dataset.id,a=day().appointments.find(a=>a.id===id);if(!a)return;e.preventDefault();if(!selectedIds().includes(id))select('appointment',id);showApptMenu(a,e.clientX,e.clientY);});
+document.addEventListener('contextmenu',e=>{const card=e.target.closest('[data-procedure]');if(card&&!e.target.closest('[data-appointment]')){const p=project.procedures.find(p=>p.id===card.dataset.procedure);if(!p)return;e.preventDefault();showProcedureMenu(p,e.clientX,e.clientY);return;}const el=e.target.closest('[data-appointment],.appointment-lock,.appointment-delete');if(!el){if(clipboard&&e.target.closest('[data-lane]')){e.preventDefault();const point={x:e.clientX,y:e.clientY};showMenu([[`Вставить (${clipboard.items.length})`,()=>pasteClipboard(point)]],point.x,point.y);}return;}const id=el.dataset.appointment||el.dataset.id,a=day().appointments.find(a=>a.id===id);if(!a)return;e.preventDefault();if(!selectedIds().includes(id))select('appointment',id);showApptMenu(a,e.clientX,e.clientY);});
 document.addEventListener('pointerdown',e=>{if(apptMenu&&!apptMenu.contains(e.target))closeApptMenu();},true);
 document.addEventListener('keydown',e=>{if(apptMenu&&e.key==='Escape'){e.preventDefault();e.stopPropagation();closeApptMenu();}},true);
 addEventListener('blur',closeApptMenu);addEventListener('resize',closeApptMenu);document.addEventListener('scroll',closeApptMenu,true);
 root.addEventListener('submit',e=>e.preventDefault());
-root.addEventListener('change',e=>{const el=e.target;if(el.id==='apply-procedure-day'){ui.applyProcedureToDay=el.checked;return;}if(el.dataset.procInstructor!==undefined){const next=clone(getSelection().instructors);next[Number(el.dataset.procInstructor)].instructorId=el.value;changeProcedureInstructors(next);return;}if(el.dataset.procInstructorColor!==undefined){const index=Number(el.dataset.procInstructorColor);if(index===0){updateField('color',el.value);return;}const next=clone(getSelection().instructors);next[index].color=el.value;changeProcedureInstructors(next);return;}if(el.dataset.patientToggle){togglePatient(el.dataset.patientToggle,el.checked);return;}if(el.dataset.field)updateField(el.dataset.field,el.type==='checkbox'?el.checked:el.value);else if(el.id==='date-picker')moveDate(el.value);else if(el.id==='zoom'){ui.zoom=Number(el.value);render();}});
+root.addEventListener('change',e=>{const el=e.target;if(el.id==='apply-procedure-day'){ui.applyProcedureToDay=el.checked;return;}if(el.dataset.rule){setProcedureRule(el);return;}if(el.dataset.ruleLink!==undefined){setProcedureLink(el);return;}if(el.dataset.ruleBoth!==undefined){const id=ui.selection.id;transact(()=>{const link=linkOf(id);if(link)link.simultaneous=el.checked;});return;}if(el.dataset.display){transact(()=>{project.display={...project.display,[el.dataset.display]:el.checked};});return;}if(el.dataset.procInstructor!==undefined){const next=clone(getSelection().instructors);next[Number(el.dataset.procInstructor)].instructorId=el.value;changeProcedureInstructors(next);return;}if(el.dataset.procInstructorColor!==undefined){const index=Number(el.dataset.procInstructorColor);if(index===0){updateField('color',el.value);return;}const next=clone(getSelection().instructors);next[index].color=el.value;changeProcedureInstructors(next);return;}if(el.dataset.patientToggle){togglePatient(el.dataset.patientToggle,el.checked);return;}if(el.dataset.field)updateField(el.dataset.field,el.type==='checkbox'?el.checked:el.value);else if(el.id==='date-picker')moveDate(el.value);else if(el.id==='zoom'){ui.zoom=Number(el.value);render();}});
 root.addEventListener('input',e=>{if(e.target.id==='instructor-search'){const pos=e.target.selectionStart;ui.instructorSearch=e.target.value;document.querySelector('.sidebar').innerHTML=sidebar();const input=document.querySelector('#instructor-search');input.focus();input.setSelectionRange(pos,pos);return;}if(e.target.id==='patient-search'){const pos=e.target.selectionStart;ui.search=e.target.value;document.querySelector('.sidebar').innerHTML=sidebar();const input=document.querySelector('#patient-search');input.focus();input.setSelectionRange(pos,pos);}});
 document.addEventListener('keydown',e=>{
   const editable=e.target.closest('input,textarea,select,[contenteditable=true]');if(e.key==='Escape'&&drag){e.preventDefault();stopDrag(true);return;}if(editable)return;if(modal.open)return;if(e.key==='Escape'){e.preventDefault();select('day');return;}
@@ -361,16 +452,19 @@ document.addEventListener('keydown',e=>{
   if(mod&&e.code==='KeyY'){e.preventDefault();redo();}
   if(mod&&e.code==='KeyS'){e.preventDefault();saveProject();}
   if(mod&&e.code==='KeyD'){e.preventDefault();duplicate();}
+  if(mod&&e.code==='KeyC'&&isApptSelection()){e.preventDefault();copySelection();}
+  if(mod&&e.code==='KeyX'&&isApptSelection()){e.preventDefault();if(copySelection())deleteSelection();}
+  if(mod&&e.code==='KeyV'&&clipboard){e.preventDefault();pasteClipboard();}
   if(e.key==='Delete'&&['appointment','appointments','band','patient','procedure'].includes(ui.selection.type)){e.preventDefault();deleteSelection();}
   if((e.key==='Enter'||e.key===' ')&&e.target.matches('[role=button]')){e.preventDefault();if(e.target.dataset.procedure)select('procedure',e.target.dataset.procedure);else if(e.target.dataset.appointment)select('appointment',e.target.dataset.appointment);else e.target.click();}
 });
-function loadImportedProject(text){const imported=ensureStays(upgradeDefaultPeriods(validateProject(JSON.parse(text))));confirmAction('Открыть другой проект?','Текущий проект будет заменён. Предварительно сохраните его кнопкой «Сохранить проект», если нужна отдельная копия. Открытие можно отменить через Ctrl+Z.','Открыть',()=>{recovery=false;transact(()=>{project=imported;ui.date=Object.keys(project.days).sort().at(-1)||localDate();if(!project.days[ui.date])project.days[ui.date]=makeDay(ui.date,project.patients);ui.selection={type:'day'};},'Проект открыт');});}
+function loadImportedProject(text){const imported=upgradeAutofill(ensureStays(upgradeDefaultPeriods(validateProject(JSON.parse(text)))));confirmAction('Открыть другой проект?','Текущий проект будет заменён. Предварительно сохраните его кнопкой «Сохранить проект», если нужна отдельная копия. Открытие можно отменить через Ctrl+Z.','Открыть',()=>{recovery=false;transact(()=>{project=imported;ui.date=Object.keys(project.days).sort().at(-1)||localDate();if(!project.days[ui.date])project.days[ui.date]=makeDay(ui.date,project.patients);ui.selection={type:'day'};},'Проект открыт');});}
 document.querySelector('#project-file').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;try{if(file.size>15*1024*1024)throw Error('Размер проекта превышает 15 МБ');loadImportedProject(await file.text());}catch(err){toast('Не удалось открыть файл: '+err.message,true);}};
 desktop?.onCommand(command=>actions[command]?.());
 window.addEventListener('beforeunload',e=>{if(!saved){e.preventDefault();e.returnValue='';}});
 
 // Only procedure cards and appointments can be dragged.
-let instructorPress=null,drag=null,lastPointer={x:0,y:0},dragFrame=0,reorderTimer=0,suppressClick=false;
+let marqueeCancelled=false,instructorPress=null,drag=null,lastPointer={x:0,y:0},dragFrame=0,reorderTimer=0,suppressClick=false;
 // Patient columns slide aside while one is dragged by its header; the move applies to
 // the shared patient order, so every day of this schedule and the PNG follow it.
 const columnParts=id=>[document.querySelector(`.column-header[data-patient="${id}"]`),document.querySelector(`[data-lane="${id}"]`),...document.querySelectorAll(`.appointment-group[data-col="${id}"] > *`)].filter(Boolean);
@@ -448,14 +542,43 @@ function finishLibraryReorder(id,from,to){
   setTimeout(()=>{card.style.transition='';card.classList.remove('reorder-dragged');},200);
 }
 
+
+// Rubber-band selection: press on an empty spot of the grid and drag. Blocks touched by the
+// frame are selected on release; with Ctrl or Shift they are added to the current selection.
+function marqueeRect(current=drag){
+  const lanes=document.querySelector('#lanes');if(!lanes)return null;
+  const r=lanes.getBoundingClientRect(),x=lastPointer.x-r.left,y=lastPointer.y-r.top;
+  return {left:Math.min(x,current.origin.x),top:Math.min(y,current.origin.y),right:Math.max(x,current.origin.x),bottom:Math.max(y,current.origin.y),lanes:r};
+}
+function marqueeHits(box){
+  return [...document.querySelectorAll('#lanes .appointment')].filter(el=>{const r=el.getBoundingClientRect(),left=r.left-box.lanes.left,top=r.top-box.lanes.top;return left<box.right&&left+r.width>box.left&&top<box.bottom&&top+r.height>box.top;});
+}
+function updateMarquee(){
+  const box=marqueeRect();if(!box)return;
+  let frame=document.querySelector('#lanes .marquee');
+  if(!frame){frame=document.createElement('div');frame.className='marquee';document.querySelector('#lanes').append(frame);}
+  frame.style.cssText=`left:${box.left}px;top:${box.top}px;width:${box.right-box.left}px;height:${box.bottom-box.top}px`;
+  const hits=new Set(marqueeHits(box));
+  for(const el of document.querySelectorAll('#lanes .appointment'))el.classList.toggle('marquee-hit',hits.has(el));
+}
+function finishMarquee(current,cancel){
+  const box=current.active&&!cancel?marqueeRect(current):null,ids=box?marqueeHits(box).map(el=>el.dataset.appointment):[];
+  document.querySelector('#lanes .marquee')?.remove();
+  for(const el of document.querySelectorAll('.marquee-hit'))el.classList.remove('marquee-hit');
+  if(!current.active){if(!current.additive)select('day');return;}
+  // Escape cancels before the button is released: the click that follows must not clear the selection.
+  if(cancel){marqueeCancelled=true;return;}
+  suppressClick=true;setTimeout(()=>{suppressClick=false;},0);
+  setAppointmentSelection([...new Set([...current.base,...ids])]);
+}
 function pointerLocation(x,y,clampTop=false){const lanes=document.querySelector('#lanes'),scroll=document.querySelector('.schedule-scroll');if(!lanes||!scroll)return null;const rect=lanes.getBoundingClientRect(),visible=scroll.getBoundingClientRect();if(x<Math.max(rect.left,visible.left+TIME_GUTTER)||x>Math.min(rect.right,visible.right)||(!clampTop&&y<visible.top+76)||y>visible.bottom+20)return null;const xx=x-rect.left,col=colOffsets().find(c=>xx>=c.x&&xx<c.x+c.width);if(!col)return null;const effectiveY=clampTop?Math.max(y,visible.top+86,rect.top):y;return {patientId:col.patientId,col,minute:day().start+Math.round(((effectiveY-rect.top)/ppm())/day().step)*day().step,rect};}
 root.addEventListener('pointerdown',e=>{
   if(e.button!==0||modal.open||e.target.closest('.procedure-card-actions'))return;instructorPress=null;const row=e.target.closest('[data-instructor-row]');if(row&&!e.target.closest('[data-action="remove-instructor"]')){instructorPress={id:row.dataset.instructorRow,x:e.clientX,y:e.clientY,pointerId:e.pointerId};return;}const ael=e.target.closest('[data-appointment]'),pel=e.target.closest('[data-procedure]'),head=e.target.closest('.column-header');
   if(head){e.preventDefault();drag={type:'column',id:head.dataset.patient,startX:e.clientX,startY:e.clientY,active:false,pointerId:e.pointerId};lastPointer={x:e.clientX,y:e.clientY};return;}
-  if(ael||pel){e.preventDefault();if(ael&&(e.ctrlKey||e.shiftKey||e.metaKey)&&!e.target.closest('[data-resize]')){toggleAppointment(ael.dataset.appointment);return;}const type=ael?'appointment':'procedure',id=(ael||pel).dataset[type],o=clone(type==='appointment'?day().appointments.find(a=>a.id===id):project.procedures.find(p=>p.id===id));const resize=e.target.closest('[data-resize]')?.dataset.resize;drag={type,id,original:o,startX:e.clientX,startY:e.clientY,active:false,resize,offset:type==='appointment'?Math.floor((e.clientY-ael.getBoundingClientRect().top)/ppm()/day().step)*day().step:0,pointerId:e.pointerId};if(type==='appointment'&&!resize&&ui.selection.type==='appointments'&&selectedIds().includes(id))drag.group=selectedAppointments().map(clone);lastPointer={x:e.clientX,y:e.clientY};
-  }else if(e.target.matches('[data-lane]'))select('day');
+  if(ael||pel){e.preventDefault();const toggle=!!ael&&(e.ctrlKey||e.shiftKey||e.metaKey)&&!e.target.closest('[data-resize]');const type=ael?'appointment':'procedure',id=(ael||pel).dataset[type],o=clone(type==='appointment'?day().appointments.find(a=>a.id===id):project.procedures.find(p=>p.id===id));const resize=e.target.closest('[data-resize]')?.dataset.resize;drag={type,id,original:o,startX:e.clientX,startY:e.clientY,active:false,resize,offset:type==='appointment'?Math.floor((e.clientY-ael.getBoundingClientRect().top)/ppm()/day().step)*day().step:0,pointerId:e.pointerId,toggle};if(type==='appointment'&&!resize&&ui.selection.type==='appointments'&&selectedIds().includes(id))drag.group=selectedAppointments().map(clone);lastPointer={x:e.clientX,y:e.clientY};
+  }else if(e.target.matches('[data-lane]')){e.preventDefault();const r=document.querySelector('#lanes').getBoundingClientRect(),additive=e.ctrlKey||e.shiftKey||e.metaKey;drag={type:'marquee',startX:e.clientX,startY:e.clientY,active:false,pointerId:e.pointerId,additive,base:additive?selectedIds():[],origin:{x:e.clientX-r.left,y:e.clientY-r.top}};lastPointer={x:e.clientX,y:e.clientY};}
 });
-document.addEventListener('pointermove',e=>{if(!drag)return;lastPointer={x:e.clientX,y:e.clientY};if(!drag.active&&Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>5){drag.active=true;document.body.classList.add('dragging');dragFrame=requestAnimationFrame(dragTick);}if(drag.active){e.preventDefault();updatePreview();}},{passive:false});
+document.addEventListener('pointermove',e=>{if(!drag)return;lastPointer={x:e.clientX,y:e.clientY};drag.copy=(e.ctrlKey||e.metaKey)&&drag.type==='appointment'&&!drag.resize;if(!drag.active&&Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>5){drag.active=true;document.body.classList.add('dragging');dragFrame=requestAnimationFrame(dragTick);}if(drag.active){e.preventDefault();updatePreview();}},{passive:false});
 function calculateDrag(){if(!drag)return null;const d=day(),location=pointerLocation(lastPointer.x,lastPointer.y,true),o=drag.original;if(!location)return null;
   if(drag.group){
     const cols=visibleColumns(d).map(c=>c.patientId),items=drag.group,idx=items.map(a=>cols.indexOf(a.patientId));if(idx.includes(-1))return null;
@@ -476,12 +599,14 @@ function showGhosts(result){
   const lanes=document.querySelector('#lanes').getBoundingClientRect(),cols=colOffsets();
   box.innerHTML=result.nexts.filter(a=>a.id!==drag.id).map(a=>{const col=cols.find(c=>c.patientId===a.patientId);return col?`<div class="drag-ghost" style="left:${lanes.left+col.x+4}px;top:${lanes.top+(a.start-day().start)*ppm()}px;width:${col.width-8}px;height:${Math.max(10,a.duration*ppm())}px;background:${a.color};color:${a.textColor||'#53616b'}"><span>${esc(a.text)}</span></div>`:'';}).join('');
 }
-function updatePreview(){const p=document.querySelector('#drag-preview');if(drag?.type==='column'){updateColumnDrag();p.hidden=true;return;}if(updateLibraryReorder()){p.hidden=true;return;}const result=calculateDrag();showGhosts(result);if(!result){p.hidden=true;return;}const {next,location,error}=result,lanes=document.querySelector('#lanes').getBoundingClientRect(),scroll=document.querySelector('.schedule-scroll').getBoundingClientRect();const x=lanes.left+location.col.x+4,width=location.col.width-8;const y=lanes.top+(next.start-day().start)*ppm();p.hidden=false;p.className='';p.style.cssText=`left:${x}px;top:${y}px;width:${width}px;height:${Math.max(10,next.duration*ppm())}px;background:${next.color};color:${next.textColor||'#53616b'}`;p.innerHTML=`<span class="drag-tooltip">${hm(next.start)}–${hm(next.start+next.duration)} · ${next.duration} мин${drag.group?` · выбрано ${drag.group.length}`:''}${error?' · '+esc(error):''}</span><span>${esc(next.text||next.name)}</span>`;}
-function dragTick(){if(!drag?.active)return;if(drag.reorderTo!=null){const list=document.querySelector('.procedure-list');if(list){const box=list.getBoundingClientRect();list.scrollLeft+=lastPointer.x>box.right-36?8:lastPointer.x<box.left+36?-8:0;}}let scroll=document.querySelector('.schedule-scroll');if(drag.type==='column'){const box=scroll.getBoundingClientRect();scroll.scrollLeft+=lastPointer.x>box.right-36?10:lastPointer.x<box.left+TIME_GUTTER+36?-10:0;}const delta=dragScrollDelta(drag,lastPointer,scroll.getBoundingClientRect(),TIME_GUTTER);if(delta.y>0&&scroll.scrollHeight-scroll.scrollTop-scroll.clientHeight<30&&day().end<1440){day().end=Math.min(1440,day().end+60);render();scroll=document.querySelector('.schedule-scroll');}scroll.scrollTop+=delta.y;scroll.scrollLeft+=delta.x;updatePreview();dragFrame=requestAnimationFrame(dragTick);}
-function stopDrag(cancel=false){if(!drag)return;const current=drag,result=current.active&&current.reorderTo==null&&current.type!=='column'?calculateDrag():null;drag=null;cancelAnimationFrame(dragFrame);document.querySelector('#drag-ghosts')?.remove();document.body.classList.remove('dragging');document.querySelector('#drag-preview').hidden=true;if(current.type==='column'){finishColumnDrag(current,cancel);return;}if(cancel){if(current.reorder)clearReorder();return;}if(current.reorderTo!=null){finishLibraryReorder(current.id,current.reorder.from,current.reorderTo);return;}if(current.reorder)clearReorder();
-  if(!current.active){select(current.type,current.id);return;}if(!result)return;if(result.error){toast(result.error,true);return;}if(result.nexts){ui.selection={type:'appointments',ids:result.nexts.map(a=>a.id)};transact(()=>{for(const n of result.nexts)Object.assign(day().appointments.find(a=>a.id===n.id),n);});return;}const {next}=result;ui.selection={type:current.type==='procedure'?'appointment':current.type,id:next.id};transact(()=>{if(current.type==='procedure')day().appointments.push(next);else if(current.type==='appointment')Object.assign(day().appointments.find(a=>a.id===next.id),next);});
+function updatePreview(){const p=document.querySelector('#drag-preview');if(drag?.type==='marquee'){updateMarquee();p.hidden=true;return;}if(drag?.type==='column'){updateColumnDrag();p.hidden=true;return;}if(updateLibraryReorder()){p.hidden=true;return;}const result=calculateDrag();showGhosts(result);if(!result){p.hidden=true;return;}const {next,location,error}=result,lanes=document.querySelector('#lanes').getBoundingClientRect(),scroll=document.querySelector('.schedule-scroll').getBoundingClientRect();const x=lanes.left+location.col.x+4,width=location.col.width-8;const y=lanes.top+(next.start-day().start)*ppm();p.hidden=false;p.className='';p.style.cssText=`left:${x}px;top:${y}px;width:${width}px;height:${Math.max(10,next.duration*ppm())}px;background:${next.color};color:${next.textColor||'#53616b'}`;p.innerHTML=`<span class="drag-tooltip">${hm(next.start)}–${hm(next.start+next.duration)} · ${next.duration} мин${drag.group?` · выбрано ${drag.group.length}`:''}${drag.copy?' · копия':''}${error?' · '+esc(error):''}</span><span>${esc(next.text||next.name)}</span>`;}
+function dragTick(){if(!drag?.active)return;if(drag.reorderTo!=null){const list=document.querySelector('.procedure-list');if(list){const box=list.getBoundingClientRect();list.scrollLeft+=lastPointer.x>box.right-36?8:lastPointer.x<box.left+36?-8:0;}}let scroll=document.querySelector('.schedule-scroll');if(drag.type==='marquee'){const box=scroll.getBoundingClientRect();scroll.scrollLeft+=lastPointer.x>box.right-30?10:lastPointer.x<box.left+TIME_GUTTER+20?-10:0;scroll.scrollTop+=lastPointer.y>box.bottom-30?9:lastPointer.y<box.top+86?-9:0;}if(drag.type==='column'){const box=scroll.getBoundingClientRect();scroll.scrollLeft+=lastPointer.x>box.right-36?10:lastPointer.x<box.left+TIME_GUTTER+36?-10:0;}const delta=dragScrollDelta(drag,lastPointer,scroll.getBoundingClientRect(),TIME_GUTTER);if(delta.y>0&&scroll.scrollHeight-scroll.scrollTop-scroll.clientHeight<30&&day().end<1440){day().end=Math.min(1440,day().end+60);render();scroll=document.querySelector('.schedule-scroll');}scroll.scrollTop+=delta.y;scroll.scrollLeft+=delta.x;updatePreview();dragFrame=requestAnimationFrame(dragTick);}
+function stopDrag(cancel=false){if(!drag)return;const current=drag,result=current.active&&current.reorderTo==null&&current.type!=='column'&&current.type!=='marquee'?calculateDrag():null;drag=null;cancelAnimationFrame(dragFrame);document.querySelector('#drag-ghosts')?.remove();document.body.classList.remove('dragging');document.querySelector('#drag-preview').hidden=true;if(current.type==='column'){finishColumnDrag(current,cancel);return;}if(current.type==='marquee'){finishMarquee(current,cancel);return;}if(cancel){if(current.reorder)clearReorder();return;}if(current.reorderTo!=null){finishLibraryReorder(current.id,current.reorder.from,current.reorderTo);return;}if(current.reorder)clearReorder();
+  if(!current.active){if(current.toggle)toggleAppointment(current.id);else select(current.type,current.id);return;}if(!result)return;if(result.error){toast(result.error,true);return;}
+  if(current.copy){const copies=(result.nexts||[result.next]).map(a=>({...clone(a),id:uid()}));ui.selection=copies.length===1?{type:'appointment',id:copies[0].id}:{type:'appointments',ids:copies.map(a=>a.id)};transact(()=>{day().appointments.push(...copies);expandDayCanvas(day());},`Скопировано процедур: ${copies.length}`);return;}
+  if(result.nexts){ui.selection={type:'appointments',ids:result.nexts.map(a=>a.id)};transact(()=>{for(const n of result.nexts)Object.assign(day().appointments.find(a=>a.id===n.id),n);});return;}const {next}=result;ui.selection={type:current.type==='procedure'?'appointment':current.type,id:next.id};transact(()=>{if(current.type==='procedure')day().appointments.push(next);else if(current.type==='appointment')Object.assign(day().appointments.find(a=>a.id===next.id),next);});
 }
-document.addEventListener('pointerup',e=>{const press=instructorPress;instructorPress=null;if(press&&e.pointerId===press.pointerId&&Math.hypot(e.clientX-press.x,e.clientY-press.y)<=5&&project.instructors.some(i=>i.id===press.id))select('instructor',press.id);stopDrag();});document.addEventListener('pointercancel',()=>{instructorPress=null;stopDrag(true);});window.addEventListener('blur',()=>{instructorPress=null;if(drag)stopDrag(true);});
+document.addEventListener('pointerup',e=>{if(marqueeCancelled){marqueeCancelled=false;suppressClick=true;setTimeout(()=>{suppressClick=false;},0);}const press=instructorPress;instructorPress=null;if(press&&e.pointerId===press.pointerId&&Math.hypot(e.clientX-press.x,e.clientY-press.y)<=5&&project.instructors.some(i=>i.id===press.id))select('instructor',press.id);if(drag?.active)drag.copy=(e.ctrlKey||e.metaKey)&&drag.type==='appointment'&&!drag.resize;stopDrag();});document.addEventListener('pointercancel',()=>{instructorPress=null;stopDrag(true);});window.addEventListener('blur',()=>{instructorPress=null;if(drag)stopDrag(true);});
 render();if(loadError)toast(loadError,true);else{persist();if(loadWarning)toast(loadWarning);}
 
 function instructorName(id){return project.instructors.find(i=>i.id===id)?.name||'Не выбран';}
@@ -515,40 +640,32 @@ function removeProcedureInstructor(index){
   changeProcedureInstructors(next);
 }
 const AUTOFILL_HELP={
-  day:['Режим и время',[
-    '<b>Весь набор</b> заменяет все назначения дня без замочка у включённых пациентов.',
-    '<b>На свободное место</b> ставит только отмеченные процедуры. Их прежние назначения без замочка переставляются, все остальные остаются и занимают время. У этого режима свои галочки.',
+  day:['Время',[
+    '<b>Что заменяется</b>, зависит от галочек процедур ниже: отмечены все — день составляется заново, отмечена часть — только эти процедуры ставятся на свободное место.',
     '<b>Начало</b> — раньше этого времени ничего не ставится.',
     '<b>Конец дня</b> берётся из настроек дня в инспекторе, там же он меняется. Это ориентир: что не помещается, уходит позже него, но не дальше 24:00. В таблице он отмечен полоской, на PNG её нет.',
     '<b>Слот</b> — шаг для процедур «по сетке». При 60 минутах это 09:00, 10:00 и так далее.',
     '<b>Не ставить на</b> — периоды дня, на которые нельзя ставить процедуры. После такого периода слоты считаются заново, например с 13:30.'
   ]],
-  procedures:['Процедуры',[
-    '<b>Оценка нагрузки</b> сверху и под названием процедуры считает сеансы до запуска: сколько нужно и сколько помещается. Это прикидка, точный результат покажет составление.',
+  procedures:['Процедуры и инструкторы',[
+    'Здесь только то, что меняется от дня ко дню: какие процедуры сегодня и кто работает.',
+    '<b>Оценка нагрузки</b> сверху и под названием процедуры считает сеансы до запуска: сколько нужно и сколько помещается. Подробности — при наведении на «!». Это прикидка, точный результат покажет составление.',
     '<b>Галочка у названия</b> — процедура будет в этот день у всех включённых пациентов.',
-    '<b>Инструктора</b> — галочка значит, что инструктор сегодня работает. Несколько инструкторов работают параллельно, а пациенту нужна одна такая процедура.',
+    '<b>Все процедуры</b> отмечены — день составляется заново: заменяются все назначения без замочка у включённых пациентов.',
+    '<b>Отмечена часть</b> — ставятся только эти процедуры. Их прежние назначения без замочка переставляются, остальные остаются и занимают время.',
+    '<b>Галочка у инструктора</b> — он сегодня работает. Несколько инструкторов работают параллельно, а пациенту нужна одна такая процедура.',
     '<b>С и до</b> — время инструктора на этой процедуре, например массаж до 14:00, АФК после. Что не помещается в заданное «до», не ставится и попадает в итог. Пустое поле — без ограничения.',
+    '<b>По инструкторам</b> — те же настройки, собранные по людям: удобно задавать смену и выключать инструктора на весь день.',
     'Инструктор не возвращается к прежней процедуре. Порядок задают поля «с» и «до», без них его выбирает генератор.',
-    '<b>Мин</b> — длительность из библиотеки процедур.',
-    '<b>Макс.</b> — сколько пациентов может быть на этой процедуре одновременно у всех инструкторов, например 2, если кушеток две. Остальных генератор поставит на другое время или процедуру. Пустое поле — без ограничения.',
-    '<b>По сетке</b> — старт только на слотах. Без галочки — любое время по шагу сетки с указанным перерывом. Галочка в заголовке включает или снимает сетку у всех.',
-    '<b>Пациенты</b>: «Поодиночке» — один пациент у инструктора. «Совместно» — любые пациенты, до указанного числа. «По группам» — только с одинаковым номером в выбранной группе.'
-  ]],
-  links:['Связки',[
-    'Связка ставит две процедуры подряд в любом порядке, например АФК · кушетка и АФК · тренажёр.',
-    'Обе идут у одного инструктора и не разрываются периодом «Не ставить на».',
-    'Связка работает, когда отмечены обе процедуры. В режиме «На свободное место» вторая добавляется сама.',
-    '<b>Инструктор может вести обе сразу</b> — один инструктор одновременно ведёт разных пациентов: одного на кушетке, другого на тренажёре.',
-    'Если одна половина закреплена замочком, вторая ставится рядом. Если рядом нет места, итог об этом сообщит.',
-    'Процедура может входить только в одну связку. Связки общие для всех дней недели этого расписания.'
+    '<b>Правила</b> (сетка, совместно, всего одновременно, связка) задаются один раз в свойствах процедуры. «Изменить» сохраняет настройки и открывает их.'
   ]],
   groups:['Группы пациентов',[
     'Группа — это набор номеров. Пациенты с одинаковым номером могут идти на процедуру вместе, с разными — нет. Без номера пациент идёт один.',
-    'Группа действует только на процедуры с режимом «По группам», у которых она выбрана в строке.',
+    'Группа действует на процедуры, у которых в свойствах выбрано «По группам» и эта группа.',
     'Один и тот же пациент может иметь разные номера в разных группах: вместе на спорт, но отдельно на эрготерапию.',
     '«Общая» есть всегда. Плюсик добавляет новую группу, название можно поменять, корзинка её удаляет.',
-    'Одинаковый номер разрешает идти вместе, но не обязывает: если раздельно день заканчивается раньше, генератор поставит раздельно.',
-    'Группы общие для всех дней недели этого расписания.'
+    'Новая группа появится в свойствах процедуры после «Сохранить» или «Составить».',
+    'Одинаковый номер разрешает идти вместе, но не обязывает: если раздельно день заканчивается раньше, генератор поставит раздельно.'
   ]]
 };
 function autofillHelp(key){const [title,lines]=AUTOFILL_HELP[key],id=`af-help-${key}`;return `<button type="button" class="af-help" popovertarget="${id}" title="Подсказка: ${title}" aria-label="Подсказка: ${title}">${icon('info')}</button><div popover id="${id}" class="af-help-popup" role="tooltip"><strong>${title}</strong><ul>${lines.map(line=>`<li>${line}</li>`).join('')}</ul></div>`;}
@@ -563,99 +680,130 @@ function positionAutofillHelp(container){
     });
   }
 }
-function autofillStore(){const stay=project.stays.find(s=>s.id===project.currentStayId),store=stay.autofill||emptyAutofill(),keys=new Set(procedurePools(project.procedures).map(p=>p.key));return {...store,...normalizeGroups(store),links:(store.links||[]).filter(l=>keys.has(l.a)&&keys.has(l.b))};}
+function autofillStore(){const stay=project.stays.find(s=>s.id===project.currentStayId),store=stay.autofill||emptyAutofill();return {...store,...normalizeGroups(store)};}
 function autofillReady(){if(!visibleColumns(day()).length){toast('Сначала включите пациентов в этом дне',true);return false;}if(!project.procedures.length){toast('Сначала создайте вид процедуры',true);return false;}return true;}
+// The day plan says what is on today; the rules come from each procedure's own properties.
+const composed=plan=>composeSettings(plan,project.procedures,project.links||[]);
+const linkOf=id=>(project.links||[]).find(l=>l.a===id||l.b===id);
+function rulesSummary(pool){
+  const p=pool.templates[0].procedure,r=rulesOf(p),link=linkOf(p.id),other=link&&project.procedures.find(x=>x.id===(link.a===p.id?link.b:link.a));
+  return [`${[...new Set(pool.templates.map(t=>durationFor(t.procedure,day())))].join(', ')} мин`,r.grid?'по сетке':`свободно, перерыв ${r.gap}`,r.together==='single'?'поодиночке':r.together==='any'?`совместно до ${r.capacity}`:`по группам до ${r.capacity}`,r.limit!=null?`всего одновременно ${r.limit}`:'',other?`связка с «${other.name}»`:''].filter(Boolean).join(' · ');
+}
 function refreshAutofillEstimate(form,draft){
   const box=form.querySelector('#af-estimate');if(!box)return;
-  const load=estimateLoad({procedures:project.procedures,day:day(),settings:draft.settings,links:draft.links,groupList:draft.groupList});
-  for(const el of form.querySelectorAll('.af-row[data-row]')){
-    const note=el.querySelector('[data-note]'),row=load?.rows[el.dataset.row];
+  const {settings,links}=composed(draft.plan),load=estimateLoad({procedures:project.procedures,day:day(),settings,links,groupList:draft.groupList});
+  for(const note of form.querySelectorAll('[data-note]')){
+    const row=load?.rows[note.dataset.note];
     note.className=`af-note ${row?.status||''}`;
     note.textContent=!row?'':!row.needed?'уже поставлено':row.cause?'':row.fit===null?`нужно ${row.needed}`:`нужно ${row.needed} · помещается ${row.fit}`;
   }
-  if(!load){box.className='af-estimate';box.textContent='Оценка появится, когда настройки будут заполнены верно.';return;}
+  if(!load){box.className='af-estimate';box.innerHTML='<span class="af-estimate-text"><strong>Оценка нагрузки:</strong> появится, когда настройки будут заполнены верно.</span>';return;}
   const lines=describeLoad(load,instructorName);
   box.className=`af-estimate ${load.status}`;
-  box.innerHTML=lines.length?`<strong>Оценка нагрузки</strong><ul>${lines.map(line=>`<li class="${line.status}">${esc(line.text)}</li>`).join('')}</ul>`:'<strong>Оценка нагрузки</strong><span>Всё должно поместиться в рабочий день.</span>';
+  // One line; the details open from the «!» so the list below never moves.
+  const summary=!lines.length?'всё должно поместиться в рабочий день.':`${load.status==='lost'?'часть сеансов не поместится':load.status==='late'?'часть сеансов уйдёт позже конца дня':'есть замечания'} · замечаний: ${lines.length}`;
+  box.innerHTML=`${lines.length?`<span class="af-estimate-icon" tabindex="0" role="button" aria-label="Подробнее об оценке нагрузки" aria-describedby="af-estimate-tip">${icon('alert')}</span>`:''}<span class="af-estimate-text"><strong>Оценка нагрузки:</strong> ${esc(summary)}</span>${lines.length?`<div popover="manual" id="af-estimate-tip" class="af-help-popup af-estimate-tip" role="tooltip"><strong>Оценка нагрузки</strong><ul>${lines.map(line=>`<li class="${line.status}">${esc(line.text)}</li>`).join('')}</ul></div>`:''}`;
+  const mark=box.querySelector('.af-estimate-icon'),tip=box.querySelector('#af-estimate-tip');if(!mark)return;
+  const open=()=>{if(!tip.matches(':popover-open'))tip.showPopover();const r=mark.getBoundingClientRect(),h=tip.offsetHeight,w=tip.offsetWidth;tip.style.left=`${Math.max(8,Math.min(r.left,innerWidth-w-8))}px`;tip.style.top=`${Math.max(8,r.bottom+h+6<=innerHeight?r.bottom+6:r.top-h-6)}px`;};
+  const close=()=>{if(tip.matches(':popover-open'))tip.hidePopover();};
+  mark.onmouseenter=open;mark.onfocus=open;mark.onmouseleave=close;mark.onblur=close;
 }
+// «Все процедуры» follows the list: ticked when all are, a dash when only some are.
+function syncPickAll(form){
+  const picks=[...form.querySelectorAll('[data-pick]')],on=picks.filter(e=>e.checked).length;
+  for(const all of form.querySelectorAll('[data-pick-all]')){all.checked=on===picks.length;all.indeterminate=on>0&&on<picks.length;}
+}
+function groupErrors(draft){
+  if(draft.groupList.some(g=>!g.name))return ['Укажите название каждой группы'];
+  if(draft.groupList.some(g=>Object.values(g.values).some(n=>!Number.isInteger(n)||n<1)))return ['Номер в группе — целое число от 1'];
+  return [];
+}
+function saveAutofillDraft(draft){const stay=project.stays.find(s=>s.id===project.currentStayId);stay.autofill=savePlan(stay.autofill,ui.date,draft.plan,draft.groupList);persist();}
 function autofillDialog(){
   if(!autofillReady())return;
-  const store=autofillStore(),draft={settings:resolveSettings(store,ui.date,project.procedures,day().bands).settings,links:clone(store.links),groupList:clone(store.groupList)};
-  const show=()=>{const y=modal.querySelector('.autofill-body')?.scrollTop||0;openModal(`Автозаполнение расписания<button type="button" class="af-help" data-af-tutorial title="Как пользоваться автозаполнением" aria-label="Как пользоваться автозаполнением">${icon('info')}</button>`,autofillBody(draft),`${button('close-modal','Отмена')}<button type="submit" form="autofill-form" class="btn primary">Составить</button>`,'autofill-dialog');modal.querySelector('.autofill-body').scrollTop=y;positionAutofillHelp(modal);document.activeElement?.blur?.();bind();};
+  const store=autofillStore(),draft={plan:resolvePlan(store,ui.date,project.procedures,day().bands).plan,groupList:clone(store.groupList)};
+  const show=()=>{const y=modal.querySelector('.autofill-body')?.scrollTop||0;openModal(`Автозаполнение расписания<button type="button" class="af-help" data-af-tutorial title="Как пользоваться автозаполнением" aria-label="Как пользоваться автозаполнением">${icon('info')}</button>`,autofillBody(draft),`${button('close-modal','Отмена')}<button type="button" class="btn" data-af-save title="Сохранить настройки без составления">Сохранить</button><button type="submit" form="autofill-form" class="btn primary">Составить</button>`,'autofill-dialog');modal.querySelector('.autofill-body').scrollTop=y;positionAutofillHelp(modal);document.activeElement?.blur?.();bind();};
   const bind=()=>{
-    modal.querySelector('[data-af-tutorial]').onclick=()=>{readAutofillForm(modal.querySelector('#autofill-form'),draft);showAutofillTutorial(show);};
-    const form=modal.querySelector('#autofill-form'),all=form.querySelector('#af-grid-all'),rows=Object.values(draft.settings.rows),grids=rows.filter(r=>r.grid).length;
-    all.checked=grids===rows.length;all.indeterminate=grids>0&&grids<rows.length;
-    refreshAutofillEstimate(form,draft);
-    form.oninput=()=>{readAutofillForm(form,draft);refreshAutofillEstimate(form,draft);};
-    form.onchange=e=>{const el=e.target;readAutofillForm(form,draft);if(el===all){for(const row of rows)row.grid=el.checked;show();}else if(el.matches('[name=mode],[data-grid],[data-together],[data-group-name]'))show();else refreshAutofillEstimate(form,draft);};
+    const form=modal.querySelector('#autofill-form'),read=()=>readAutofillForm(form,draft),fail=errors=>{form.querySelector('#modal-error').textContent=errors[0];return true;};
+    modal.querySelector('[data-af-tutorial]').onclick=()=>{read();showAutofillTutorial(show);};
+    syncPickAll(form);refreshAutofillEstimate(form,draft);
+    form.oninput=()=>{read();refreshAutofillEstimate(form,draft);};
+    form.onchange=e=>{
+      const el=e.target;read();
+      if(el.matches('[data-instructor-on]')){for(const work of el.closest('[data-person]').querySelectorAll('[data-work]'))draft.plan.work[work.dataset.work].enabled=el.checked;show();}
+      else if(el.matches('[data-pick-all]')){for(const pick of form.querySelectorAll('[data-pick]'))pick.checked=el.checked;read();syncPickAll(form);refreshAutofillEstimate(form,draft);}
+      else if(el.matches('[data-pick]')){syncPickAll(form);refreshAutofillEstimate(form,draft);}
+      else if(el.matches('[data-group-name]'))show();
+      else refreshAutofillEstimate(form,draft);
+    };
     form.onclick=e=>{
-      const addLink=e.target.closest('[data-af-add-link]'),removeLink=e.target.closest('[data-af-remove-link]'),addGroup=e.target.closest('[data-af-add-group]'),removeGroup=e.target.closest('[data-af-remove-group]');
-      if(!addLink&&!removeLink&&!addGroup&&!removeGroup)return;
-      e.preventDefault();readAutofillForm(form,draft);
-      if(addLink){const pools=procedurePools(project.procedures);draft.links.push({a:pools[0].key,b:pools[1].key,simultaneous:false});}
-      if(removeLink)draft.links.splice(Number(removeLink.dataset.afRemoveLink),1);
+      const view=e.target.closest('[data-af-view]'),addGroup=e.target.closest('[data-af-add-group]'),removeGroup=e.target.closest('[data-af-remove-group]'),rules=e.target.closest('[data-af-rules]');
+      if(!view&&!addGroup&&!removeGroup&&!rules)return;
+      e.preventDefault();read();
+      if(rules){if(groupErrors(draft).length&&fail(groupErrors(draft)))return;saveAutofillDraft(draft);modal.close();select('procedure',rules.dataset.afRules);return;}
+      if(view)ui.autofillView=view.dataset.afView;
       if(addGroup)draft.groupList.push({id:uid(),name:`Группа ${draft.groupList.length}`,values:{}});
-      if(removeGroup){const id=removeGroup.dataset.afRemoveGroup;draft.groupList=draft.groupList.filter(g=>g.id!==id);for(const row of Object.values(draft.settings.rows))if(row.groupId===id)row.groupId=COMMON_GROUP;}
+      if(removeGroup)draft.groupList=draft.groupList.filter(g=>g.id!==removeGroup.dataset.afRemoveGroup);
       show();
     };
+    modal.querySelector('[data-af-save]').onclick=()=>{read();const errors=groupErrors(draft);if(errors.length&&fail(errors))return;saveAutofillDraft(draft);modal.close();toast('Настройки автозаполнения сохранены');};
     form.onsubmit=e=>{
-      e.preventDefault();readAutofillForm(form,draft);
-      const errors=checkSettings(draft.settings,project.procedures,day(),draft.links);
-      if(draft.groupList.some(g=>!g.name))errors.push('Укажите название каждой группы');
-      if(draft.groupList.some(g=>Object.values(g.values).some(n=>!Number.isInteger(n)||n<1)))errors.push('Номер в группе — целое число от 1');
-      if(errors.length){form.querySelector('#modal-error').textContent=errors[0];return;}
-      const stay=project.stays.find(s=>s.id===project.currentStayId);
-      stay.autofill=saveWeekdaySettings(stay.autofill,ui.date,draft.settings,draft.links,draft.groupList);
-      persist();modal.close();runAutofill(draft.settings,draft.links,draft.groupList);
+      e.preventDefault();read();
+      const {settings,links}=composed(draft.plan),errors=[...checkSettings(settings,project.procedures,day(),links),...groupErrors(draft)];
+      if(errors.length&&fail(errors))return;
+      saveAutofillDraft(draft);modal.close();runAutofill(draft.plan,draft.groupList);
     };
   };
   show();
 }
-function autofillBody({settings:s,links,groupList}){
-  const d=day(),pools=procedurePools(project.procedures),partial=s.mode==='partial',bandNames=[...new Set(d.bands.map(b=>b.name))];
+function autofillBody({plan:s,groupList}){
+  const d=day(),pools=procedurePools(project.procedures),bandNames=[...new Set(d.bands.map(b=>b.name))],view=ui.autofillView==='instructors'?'instructors':'procedures';
   const number=(attr,value,min,max,step,label)=>`<input class="af-input af-number" type="number" ${attr} value="${esc(value)}" min="${min}" max="${max}" step="${step}" aria-label="${label}">`;
   const clock=(attr,value,label)=>`<input class="af-input af-clock" type="time" data-time-clearable ${attr} value="${esc(value)}" placeholder="—" aria-label="${label}">`;
-  const rows=pools.map(pool=>{
-    const row=s.rows[pool.key],picked=partial?s.partialKeys.includes(pool.key):row.enabled,durations=[...new Set(pool.templates.map(t=>durationFor(t.procedure,d)))];
-    const instructors=pool.templates.map(t=>{const work=s.instructors[t.work];return `<div class="af-work" data-work="${t.work}"><label><input type="checkbox" data-work-on ${work.enabled!==false?'checked':''}><span>${t.instructorId?esc(instructorName(t.instructorId)):'Без инструктора'}</span></label><span class="af-window">с ${clock('data-work-from',work.from,'Начало работы')} до ${clock('data-work-to',work.to,'Конец работы')}</span></div>`;}).join('');
-    return `<div class="af-row" data-row="${esc(pool.key)}"><div class="af-name-cell"><label class="af-name"><input type="checkbox" data-pick ${picked?'checked':''}><strong>${esc(pool.name)}</strong></label><small class="af-note" data-note></small></div><div>${instructors}</div><span class="af-minutes">${durations.join(', ')}</span><div class="af-limit">${number('data-limit',row.limit??'',1,500,1,'Максимум одновременно')}</div><div class="af-grid-cell"><input type="checkbox" data-grid ${row.grid?'checked':''} aria-label="По сетке">${row.grid?'':`<label>перерыв ${number('data-gap',row.gap,0,240,d.step,'Перерыв, минут')}</label>`}</div><div class="af-together"><select class="af-input" data-together aria-label="Пациенты"><option value="single" ${row.together==='single'?'selected':''}>Поодиночке</option><option value="any" ${row.together==='any'?'selected':''}>Совместно</option><option value="groups" ${row.together==='groups'?'selected':''}>По группам</option></select>${row.together==='groups'?`<select class="af-input" data-row-group aria-label="Группа для процедуры">${groupList.map(g=>`<option value="${g.id}" ${(row.groupId||COMMON_GROUP)===g.id?'selected':''}>${esc(g.name)}</option>`).join('')}</select>`:''}${row.together==='single'?'':`<label>до ${number('data-capacity',row.capacity,2,50,1,'Пациентов одновременно')}</label>`}</div></div>`;
-  }).join('');
-  const options=key=>pools.map(p=>`<option value="${esc(p.key)}" ${p.key===key?'selected':''}>${esc(p.name)}</option>`).join('');
-  const linkRows=links.map((l,i)=>`<div class="af-link" data-link><select class="af-input" data-link-a aria-label="Первая процедура">${options(l.a)}</select><span>+</span><select class="af-input" data-link-b aria-label="Вторая процедура">${options(l.b)}</select><label><input type="checkbox" data-link-both ${l.simultaneous?'checked':''}>Инструктор может вести обе сразу</label><button type="button" class="icon-btn" data-af-remove-link="${i}" title="Удалить связку" aria-label="Удалить связку">${icon('trash')}</button></div>`).join('')||'<p class="af-empty">Связок пока нет</p>';
+  const cardIds=pool=>[...new Set(pool.templates.map(t=>t.procedure.id))];
+  const picked=pool=>cardIds(pool).some(id=>!s.off.includes(id)),count=pools.filter(picked).length;
+  const pickAll=`<label class="af-name af-all"><input type="checkbox" data-pick-all ${count===pools.length?'checked':''}><strong>Все процедуры</strong></label>`;
+  const pick=pool=>`<label class="af-name"><input type="checkbox" data-pick="${esc(pool.key)}" ${picked(pool)?'checked':''}><strong>${esc(pool.name)}</strong></label><small class="af-note" data-note="${esc(pool.key)}"></small>`;
+  const workLine=(t,label)=>{const work=s.work[t.work];return `<div class="af-work" data-work="${t.work}"><label><input type="checkbox" data-work-on ${work.enabled!==false?'checked':''}><span>${label}</span></label><span class="af-window">с ${clock('data-work-from',work.from,'Начало работы')} до ${clock('data-work-to',work.to,'Конец работы')}</span></div>`;};
+  let work;
+  if(view==='procedures')work=`<div class="af-table"><div class="af-row af-head"><span>${pickAll}</span><span>Кто работает и когда</span><span>Правила</span></div>${pools.map(pool=>`<div class="af-row" data-row="${esc(pool.key)}"><div class="af-name-cell">${pick(pool)}</div><div>${pool.templates.map(t=>workLine(t,t.instructorId?esc(instructorName(t.instructorId)):'Без инструктора')).join('')}</div><div class="af-rules"><span>${esc(rulesSummary(pool))}</span><button type="button" class="text-btn" data-af-rules="${pool.templates[0].procedure.id}" title="Сохранить настройки и открыть свойства процедуры">Изменить</button></div></div>`).join('')}</div>`;
+  else{
+    const people=[...project.instructors.map(i=>[i.id,i.name]),[null,'Без инструктора']].map(([id,name])=>{
+      const lines=pools.flatMap(pool=>pool.templates.filter(t=>t.instructorId===id).map(t=>workLine(t,esc(pool.name))));
+      if(!lines.length)return '';
+      const on=pools.some(pool=>pool.templates.some(t=>t.instructorId===id&&s.work[t.work].enabled!==false));
+      return `<div class="af-person" data-person="${id||''}"><label class="af-name"><input type="checkbox" data-instructor-on ${on?'checked':''}><strong>${esc(name)}</strong></label><div>${lines.join('')}</div></div>`;
+    }).join('');
+    work=`<div class="af-chips"><span class="af-chip">${pickAll}</span>${pools.map(pool=>`<span class="af-chip">${pick(pool)}</span>`).join('')}</div><div class="af-people">${people}</div>`;
+  }
   const groupHeads=groupList.map(g=>g.id===COMMON_GROUP?`<th>${esc(g.name)}</th>`:`<th><span class="af-group-head"><input class="af-input" type="text" data-plain-text data-group-name="${g.id}" value="${esc(g.name)}" maxlength="40" aria-label="Название группы"><button type="button" class="icon-btn" data-af-remove-group="${g.id}" title="Удалить группу" aria-label="Удалить группу">${icon('trash')}</button></span></th>`).join('');
   const patientRows=project.patients.filter(p=>!p.archived).sort((a,b)=>a.name.localeCompare(b.name,'ru')).map(p=>`<tr><td>${esc(p.name)}</td>${groupList.map(g=>`<td><input class="af-input af-number" type="number" min="1" step="1" data-group-value="${g.id}" data-patient="${p.id}" value="${esc(g.values[p.id]??'')}" aria-label="${esc(g.name)}: ${esc(p.name)}"></td>`).join('')}</tr>`).join('');
   const head=(title,key,action='')=>`<div class="af-card-head"><div class="af-card-title"><h3>${title}</h3>${autofillHelp(key)}</div>${action}</div>`;
-  return `<form id="autofill-form" class="modal-body autofill-body" data-shown-mode="${s.mode}" novalidate>
+  const switcher=`<div class="af-switch" role="tablist" aria-label="Вид списка">${[['procedures','По процедурам'],['instructors','По инструкторам']].map(([id,label])=>`<button type="button" role="tab" data-af-view="${id}" aria-selected="${view===id}" class="${view===id?'active':''}">${label}</button>`).join('')}</div>`;
+  return `<form id="autofill-form" class="modal-body autofill-body" data-view="${view}" novalidate>
     <section class="af-card">${head(esc(dateLabel(ui.date)),'day')}
-      <div class="af-modes"><label><input type="radio" name="mode" value="full" ${partial?'':'checked'}><span>Весь набор</span></label><label><input type="radio" name="mode" value="partial" ${partial?'checked':''}><span>На свободное место</span></label></div>
       <div class="af-general"><label class="af-field"><span>Начало</span><input class="af-input af-clock" type="time" name="start" value="${esc(Number.isInteger(s.start)?hm(s.start):'')}"></label><div class="af-field" title="Меняется в настройках дня в инспекторе"><span>Конец дня</span><span class="af-readonly">${hm(workdayEnd(d))}</span></div><label class="af-field"><span>Слот, мин</span>${number('name="slot"',s.slot,d.step,480,d.step,'Длина слота')}</label>${bandNames.length?`<div class="af-field af-bands"><span>Не ставить на</span><div>${bandNames.map(n=>`<label><input type="checkbox" data-band-name="${esc(n)}" ${s.blockedBands[n]?'checked':''}>${esc(n)}</label>`).join('')}</div></div>`:''}</div>
     </section>
-    <section class="af-card">${head('Процедуры','procedures')}
+    <section class="af-card">${head('Процедуры и инструкторы','procedures',switcher)}
       <div id="af-estimate" class="af-estimate" aria-live="polite"></div>
-      <div class="af-table"><div class="af-row af-head"><span>Процедура</span><span>Инструктора</span><span>Мин</span><span title="Максимум пациентов на этой процедуре одновременно у всех инструкторов">Макс.</span><label class="af-grid-all"><input type="checkbox" id="af-grid-all">По сетке</label><span>Пациенты</span></div>${rows}</div>
+      ${work}
     </section>
-    <section class="af-card">${head('Связки','links',`<button type="button" class="icon-btn" data-af-add-link title="Добавить связку" aria-label="Добавить связку" ${pools.length<2?'disabled':''}>${icon('plus')}</button>`)}${linkRows}</section>
     <section class="af-card">${head('Группы пациентов','groups',`<button type="button" class="icon-btn" data-af-add-group title="Добавить группу" aria-label="Добавить группу">${icon('plus')}</button>`)}
       <div class="af-matrix"><table><thead><tr><th>Пациент</th>${groupHeads}</tr></thead><tbody>${patientRows}</tbody></table></div>
     </section>
     <div id="modal-error" class="error-text"></div></form>`;
 }
 function readAutofillForm(form,draft){
-  const s=draft.settings,value=name=>form.querySelector(`[name=${name}]`).value,shown=form.dataset.shownMode;
-  s.mode=form.querySelector('[name=mode]:checked').value;s.start=minutes(value('start'));s.slot=Number(value('slot'));
+  const s=draft.plan,value=name=>form.querySelector(`[name=${name}]`).value,pools=procedurePools(project.procedures);
+  s.mode='full';s.partial=[];s.start=minutes(value('start'));s.slot=Number(value('slot'));
   for(const el of form.querySelectorAll('[data-band-name]'))s.blockedBands[el.dataset.bandName]=el.checked;
-  const picked=[];
-  for(const el of form.querySelectorAll('.af-row[data-row]')){
-    const key=el.dataset.row,row=s.rows[key],pick=el.querySelector('[data-pick]').checked;
-    if(shown==='full')row.enabled=pick;else if(pick)picked.push(key);
-    row.grid=el.querySelector('[data-grid]').checked;row.together=el.querySelector('[data-together]').value;
-    const gap=el.querySelector('[data-gap]'),capacity=el.querySelector('[data-capacity]');if(gap)row.gap=Number(gap.value);if(capacity)row.capacity=Number(capacity.value);const limit=el.querySelector('[data-limit]').value;row.limit=limit===''?null:Number(limit);
-    for(const work of el.querySelectorAll('[data-work]'))s.instructors[work.dataset.work]={enabled:work.querySelector('[data-work-on]').checked,from:work.querySelector('[data-work-from]').value.trim(),to:work.querySelector('[data-work-to]').value.trim()};
+  for(const el of form.querySelectorAll('[data-pick]')){
+    const pool=pools.find(p=>p.key===el.dataset.pick);if(!pool)continue;
+    const ids=[...new Set(pool.templates.map(t=>t.procedure.id))];
+    s.off=s.off.filter(id=>!ids.includes(id));
+    if(!el.checked)s.off.push(...ids);
   }
-  if(shown==='partial')s.partialKeys=picked;
-  draft.links=[...form.querySelectorAll('[data-link]')].map(el=>({a:el.querySelector('[data-link-a]').value,b:el.querySelector('[data-link-b]').value,simultaneous:el.querySelector('[data-link-both]').checked}));
-  for(const el of form.querySelectorAll('[data-row-group]'))s.rows[el.closest('[data-row]').dataset.row].groupId=el.value;
+  for(const work of form.querySelectorAll('[data-work]'))s.work[work.dataset.work]={enabled:work.querySelector('[data-work-on]').checked,from:work.querySelector('[data-work-from]').value.trim(),to:work.querySelector('[data-work-to]').value.trim()};
   for(const group of draft.groupList){
     const name=form.querySelector(`[data-group-name="${group.id}"]`);if(name)group.name=name.value.trim();
     group.values=Object.fromEntries([...form.querySelectorAll(`[data-group-value="${group.id}"]`)].filter(el=>el.value!=='').map(el=>[el.dataset.patient,Number(el.value)]));
@@ -663,18 +811,36 @@ function readAutofillForm(form,draft){
 }
 function repeatAutofill(){
   if(!autofillReady())return;
-  const store=autofillStore(),{settings,saved}=resolveSettings(store,ui.date,project.procedures,day().bands);
+  const store=autofillStore(),{plan,saved}=resolvePlan(store,ui.date,project.procedures,day().bands);
   if(!saved){autofillDialog();return;}
-  const errors=checkSettings(settings,project.procedures,day(),store.links);
+  const {settings,links}=composed(plan),errors=checkSettings(settings,project.procedures,day(),links);
   if(errors.length){toast(errors[0],true);return;}
-  runAutofill(settings,store.links,store.groupList);
+  runAutofill(plan,store.groupList);
 }
-function runAutofill(settings,links,groupList){
-  const plan=planDay({procedures:project.procedures,day:day(),settings,links,groupList,budgetMs:500}),removed=new Set(plan.remove);
-  const success=transact(()=>{const d=day();d.appointments=d.appointments.filter(a=>!removed.has(a.id));for(const item of plan.place)d.appointments.push(makeAppointment(project.procedures.find(p=>p.id===item.procedureId),item.patientId,item.start,item.instructorId));expandDayCanvas(d);ui.selection={type:'day'};});
-  if(success)showAutofillReport(plan.report,settings);
+function runAutofill(plan,groupList){
+  const {settings,links}=composed(plan),result=planDay({procedures:project.procedures,day:day(),settings,links,groupList,budgetMs:500}),removed=new Set(result.remove);
+  const success=transact(()=>{const d=day();d.appointments=d.appointments.filter(a=>!removed.has(a.id));for(const item of result.place)d.appointments.push(makeAppointment(project.procedures.find(p=>p.id===item.procedureId),item.patientId,item.start,item.instructorId));expandDayCanvas(d);ui.selection={type:'day'};});
+  if(success)showAutofillReport(result.report);
 }
-function showAutofillReport(report,settings){
+// Rules of a procedure for the generator: set once here, used on every day.
+function procedureRulesSection(o){
+  const r=rulesOf(o),d=day(),link=linkOf(o.id),partner=link?(link.a===o.id?link.b:link.a):'',groups=autofillStore().groupList,own=poolKey(o.name);
+  const num=(label,key,value,min,max,step,hint='')=>`<label class="field"><span class="field-label">${label}</span><input type="number" data-rule="${key}" value="${esc(value??'')}" min="${min}" max="${max}" step="${step}" placeholder="${hint}"></label>`;
+  const choice=(label,attr,value,options)=>`<label class="field"><span class="field-label">${label}</span><select ${attr}>${options.map(([v,t])=>`<option value="${esc(v)}" ${v===value?'selected':''}>${esc(t)}</option>`).join('')}</select></label>`;
+  return section('Автозаполнение',`<label class="checkbox-field rule-check"><input type="checkbox" data-rule="grid" ${r.grid?'checked':''}>Ставить по сетке слотов</label>${r.grid?'':num('Перерыв после процедуры, мин','gap',r.gap,0,240,d.step)}${choice('Пациенты','data-rule="together"',r.together,[['single','Поодиночке'],['any','Совместно'],['groups','По группам']])}${r.together==='single'?'':num('У одного инструктора, не больше','capacity',r.capacity,2,50,1)}${r.together==='groups'?choice('Группа пациентов','data-rule="groupId"',groups.some(g=>g.id===r.groupId)?r.groupId:COMMON_GROUP,groups.map(g=>[g.id,g.name])):''}${num('Всего на процедуре одновременно (места, оборудование)','limit',r.limit,1,500,1,'Без ограничения')}${choice('Связка: ставить подряд с','data-rule-link',partner,[['','Нет'],...project.procedures.filter(p=>p.id!==o.id&&poolKey(p.name)!==own).map(p=>[p.id,p.name])])}${link?`<label class="checkbox-field rule-check"><input type="checkbox" data-rule-both ${link.simultaneous?'checked':''}>Инструктор ведёт обе сразу</label>`:''}`);
+}
+function setProcedureRule(el){
+  const id=ui.selection.id,key=el.dataset.rule;let value=el.type==='checkbox'?el.checked:el.value;
+  if(key==='gap'||key==='capacity')value=Number(value);
+  if(key==='limit')value=el.value===''?null:Number(el.value);
+  const error=ruleError(key,value);if(error){toast(error,true);render();return;}
+  transact(()=>{const p=project.procedures.find(x=>x.id===id);p.rules={...rulesOf(p),[key]:value};});
+}
+function setProcedureLink(el){
+  const id=ui.selection.id,other=el.value;
+  transact(()=>{const old=linkOf(id);project.links=(project.links||[]).filter(l=>![l.a,l.b].includes(id)&&!(other&&[l.a,l.b].includes(other)));if(other)project.links.push({a:id,b:other,simultaneous:!!old?.simultaneous});});
+}
+function showAutofillReport(report){
   const summary=`Поставлено ${report.placed} из ${report.total}${report.overtime?`. После ${hm(workdayEnd(day()))}: ${report.overtime}`:''}`;
   if(!report.unplaced.length&&!report.broken.length&&!report.lockedReturns.length){toast(summary);return;}
   const patient=id=>esc(project.patients.find(p=>p.id===id)?.name||'Пациент');

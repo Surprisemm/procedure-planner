@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const {pathToFileURL}=require('node:url');
 const ROOT=path.resolve(__dirname,'..');
 const APP_URL='ritm://app/index.html';
-const FILES=new Set([...['schedule','patients','instructors','library','procedure','library-drag','days','inspector','export','autofill-button','autofill-result','autofill-day','autofill-procedures','autofill-rules','autofill-links','autofill-groups','autofill-locks','autofill-partial','autofill-report'].map(name=>`assets/tutorial/${name}.png`),'index.html','app.js','domain.mjs','autofill.mjs','export.mjs','styles.css','time-picker.mjs','desktop/icon.svg','color-picker.mjs','text-editors.mjs','presentation.mjs','drag-scroll.mjs']);
+const FILES=new Set([...['schedule','patients','instructors','library','procedure','library-drag','days','inspector','export','autofill-button','autofill-result','autofill-day','autofill-procedures','autofill-rules','autofill-instructors','autofill-groups','autofill-locks','autofill-partial','autofill-report'].map(name=>`assets/tutorial/${name}.png`),'index.html','app.js','domain.mjs','autofill.mjs','export.mjs','styles.css','time-picker.mjs','desktop/icon.svg','color-picker.mjs','text-editors.mjs','presentation.mjs','drag-scroll.mjs']);
 app.setName('Расписание процедур');
 app.setAppUserModelId('ru.procedureplanner.desktop');
 protocol.registerSchemesAsPrivileged([{scheme:'ritm',privileges:{standard:true,secure:true,supportFetchAPI:true}}]);
@@ -39,6 +39,27 @@ async function start(){
     if(result.canceled)return {canceled:true};
     const file=result.filePaths[0];if(fs.statSync(file).size>storage.MAX_PROJECT_BYTES)throw Error('Размер проекта превышает 15 МБ');
     const data=fs.readFileSync(file,'utf8');storage.parseProject(data);return {data};
+  });
+  ipcMain.handle('ritm:save-files',async(event,payload)=>{
+    if(!trusted(event))throw Error('Недопустимый источник запроса');
+    const files=payload?.files,png=Buffer.from([137,80,78,71,13,10,26,10]);
+    if(!Array.isArray(files)||!files.length||files.length>400)throw Error('Некорректный набор файлов');
+    let total=0;
+    for(const file of files){
+      if(!file||typeof file.name!=='string'||!/\.png$/i.test(file.name)||!(file.bytes instanceof Uint8Array)||file.bytes.byteLength>80*1024*1024||!Buffer.from(file.bytes.subarray(0,8)).equals(png))throw Error('Некорректное изображение PNG');
+      total+=file.bytes.byteLength;
+    }
+    if(total>600*1024*1024)throw Error('Слишком большой набор изображений');
+    // Checks run without dialogs: with --smoke-test the files go to the test folder.
+    let folder=smoke&&smokeDir?path.join(path.resolve(smokeDir),'export'):null;
+    if(!folder){
+      const result=await dialog.showOpenDialog(mainWindow,{title:'Папка для изображений расписания',defaultPath:app.getPath('documents'),properties:['openDirectory','createDirectory']});
+      if(result.canceled)return {canceled:true};
+      folder=result.filePaths[0];
+    }
+    await fs.promises.mkdir(folder,{recursive:true});
+    for(const file of files)await fs.promises.writeFile(path.join(folder,path.basename(file.name).replace(/[<>:"/\\|?*\x00-\x1f]/g,'_')),Buffer.from(file.bytes));
+    return {ok:true,count:files.length,folder};
   });
   ipcMain.handle('ritm:save-file',async(event,payload)=>{
     if(!trusted(event))throw Error('Недопустимый источник запроса');

@@ -241,12 +241,12 @@ export function transferAppointments(p,sourceDate,ids,targetDate,move=false){
 export function validateAutofill(a){
   if(a===undefined)return;
   const record=x=>x&&typeof x==='object'&&!Array.isArray(x);
-  assert(record(a)&&Array.isArray(a.links)&&(a.groups===undefined||record(a.groups))&&record(a.weekdays),'Некорректные настройки автозаполнения');
-  a.links.forEach(l=>assert(record(l)&&typeof l.a==='string'&&typeof l.b==='string'&&typeof l.simultaneous==='boolean','Некорректная связка процедур'));
+  assert(record(a)&&(a.links===undefined||Array.isArray(a.links))&&(a.groups===undefined||record(a.groups))&&record(a.weekdays),'Некорректные настройки автозаполнения');
+  (a.links||[]).forEach(l=>assert(record(l)&&typeof l.a==='string'&&typeof l.b==='string'&&typeof l.simultaneous==='boolean','Некорректная связка процедур'));
   assert(Object.values(a.groups||{}).every(g=>typeof g==='string'),'Некорректная группа пациентов');
   assert(a.groupList===undefined||(Array.isArray(a.groupList)&&a.groupList.every(g=>record(g)&&typeof g.id==='string'&&typeof g.name==='string'&&(g.values===undefined||(record(g.values)&&Object.values(g.values).every(n=>Number.isInteger(n)&&n>=1))))),'Некорректный список групп');
   assert(a.lastWeekday===undefined||/^[0-6]$/.test(a.lastWeekday),'Некорректный день недели');
-  for(const [weekday,s] of Object.entries(a.weekdays))assert(/^[0-6]$/.test(weekday)&&record(s)&&Number.isInteger(s.start)&&Number.isInteger(s.end)&&Number.isInteger(s.slot)&&['full','partial'].includes(s.mode)&&Array.isArray(s.partialKeys)&&record(s.blockedBands)&&record(s.rows)&&record(s.instructors),'Некорректные настройки автозаполнения');
+  for(const [weekday,s] of Object.entries(a.weekdays))assert(/^[0-6]$/.test(weekday)&&record(s)&&Number.isInteger(s.start)&&Number.isInteger(s.slot)&&['full','partial'].includes(s.mode)&&record(s.blockedBands)&&(record(s.rows)?Array.isArray(s.partialKeys)&&record(s.instructors):Array.isArray(s.off)&&Array.isArray(s.partial)&&record(s.work)),'Некорректные настройки автозаполнения');
 }
 export function validateProject(p) {
   assert(p && p.version===1 && Array.isArray(p.patients) && Array.isArray(p.procedures) && p.days && typeof p.days==='object' && !Array.isArray(p.days),'Неподдерживаемый формат проекта');
@@ -257,6 +257,12 @@ export function validateProject(p) {
   for(const i of p.instructors||[])assert(typeof i.name==='string'&&i.name.trim()&&i.name.length<=140,'Некорректная карточка инструктора');
   const checkInstructor=record=>assert(record.instructorId==null||instructorIds.has(record.instructorId),'Инструктор не найден');
   p.procedures.forEach(checkInstructor);
+  for(const x of p.procedures){
+    const r=x.rules;if(r===undefined)continue;
+    assert(r&&typeof r==='object'&&!Array.isArray(r)&&typeof r.grid==='boolean'&&Number.isInteger(r.gap)&&r.gap>=0&&r.gap<=240&&['single','any','groups'].includes(r.together)&&Number.isInteger(r.capacity)&&r.capacity>=2&&r.capacity<=50&&(r.limit===null||(Number.isInteger(r.limit)&&r.limit>=1&&r.limit<=500))&&typeof r.groupId==='string','Некорректные правила автозаполнения процедуры');
+  }
+  assert(p.links===undefined||(Array.isArray(p.links)&&p.links.every(l=>l&&typeof l.a==='string'&&typeof l.b==='string'&&l.a!==l.b&&typeof l.simultaneous==='boolean')),'Некорректная связка процедур');
+  assert(p.display===undefined||(p.display&&typeof p.display==='object'&&!Array.isArray(p.display)),'Некорректные настройки вида');
   for(const x of p.procedures){
     if(x.instructors===undefined)continue;
     assert(Array.isArray(x.instructors)&&new Set(x.instructors.map(w=>w?.instructorId)).size===x.instructors.length,'Некорректный список инструкторов процедуры');

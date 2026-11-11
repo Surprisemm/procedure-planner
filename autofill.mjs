@@ -25,7 +25,7 @@ export function procedurePools(procedures){
 }
 export const defaultRow=()=>({enabled:true,grid:true,gap:5,together:'single',capacity:2,groupId:COMMON_GROUP,limit:null});
 export const isBlockedByDefault=name=>name.trim().toLowerCase()==='обед';
-export function emptyAutofill(){return {links:[],groupList:[commonGroup()],weekdays:{}};}
+export function emptyAutofill(){return {groupList:[commonGroup()],weekdays:{}};}
 export const COMMON_GROUP='common';
 const commonGroup=()=>({id:COMMON_GROUP,name:'Общая',values:{}});
 // A group is a named set of numbers, one per patient: patients with the same
@@ -55,15 +55,83 @@ export function normalizeSettings(raw,procedures,bands=[]){
   const partialKeys=(raw?.partialKeys||[]).filter(key=>rows[key]);
   return {start:raw?.start??DEFAULT_START,end:raw?.end??DEFAULT_END,slot:raw?.slot??DEFAULT_SLOT,mode:raw?.mode==='partial'?'partial':'full',partialKeys,blockedBands,rows,instructors};
 }
-// A weekday without its own settings starts from the most recently used ones.
-export function resolveSettings(autofill,date,procedures,bands){
-  const store=autofill||emptyAutofill(),own=store.weekdays?.[weekdayOf(date)];
-  const inherited=store.lastWeekday!==undefined?store.weekdays?.[store.lastWeekday]:null;
-  return {settings:normalizeSettings(own||inherited,procedures,bands),saved:!!own};
+// What is fixed for a procedure lives on the procedure itself (`rules`); links between
+// two procedures live on the project. They are set once in the procedure's properties.
+export const defaultRules=()=>({grid:true,gap:5,together:'single',capacity:2,groupId:COMMON_GROUP,limit:null});
+export const rulesOf=procedure=>({...defaultRules(),...procedure?.rules});
+export function ruleError(key,value){
+  if(key==='gap'&&(!Number.isInteger(value)||value<0||value>240))return 'Укажите перерыв от 0 до 240 минут';
+  if(key==='capacity'&&(!Number.isInteger(value)||value<2||value>50))return 'Укажите от 2 до 50 пациентов одновременно';
+  if(key==='limit'&&value!==null&&(!Number.isInteger(value)||value<1||value>500))return 'Укажите «всего одновременно» от 1 до 500 или оставьте поле пустым';
+  if(key==='together'&&!['single','any','groups'].includes(value))return 'Неизвестный режим';
+  return null;
 }
-export function saveWeekdaySettings(autofill,date,settings,links,groupList){
-  const weekday=weekdayOf(date),{groups:_old,...rest}=autofill||emptyAutofill();
-  return {...rest,links,groupList,weekdays:{...autofill?.weekdays,[weekday]:settings},lastWeekday:weekday};
+function cleanRules(raw){
+  const rules={...defaultRules()};
+  for(const key of Object.keys(rules)){
+    if(raw?.[key]===undefined)continue;
+    if(key==='grid'){if(typeof raw.grid==='boolean')rules.grid=raw.grid;}
+    else if(key==='groupId'){if(typeof raw.groupId==='string')rules.groupId=raw.groupId;}
+    else if(!ruleError(key,raw[key]))rules[key]=raw[key];
+  }
+  return rules;
+}
+// The day plan holds only what changes from day to day: which procedures are on,
+// who works and when. It is remembered per weekday.
+export function normalizePlan(raw,procedures,bands=[]){
+  const ids=new Set(procedures.map(p=>p.id)),work={};
+  for(const {templates} of procedurePools(procedures))for(const {work:key} of templates)work[key]={enabled:true,from:'',to:'',...raw?.work?.[key]};
+  const blockedBands={};
+  for(const {name} of bands)blockedBands[name]=raw?.blockedBands?.[name]??isBlockedByDefault(name);
+  const list=value=>[...new Set((value||[]).filter(id=>ids.has(id)))];
+  // One set of switches: everything ticked rebuilds the day, a part goes into the free time.
+  // Plans saved with the old «На свободное место» mode keep their choice.
+  const off=raw?.mode==='partial'?[...ids].filter(id=>!list(raw.partial).includes(id)):list(raw?.off);
+  return {start:raw?.start??DEFAULT_START,slot:raw?.slot??DEFAULT_SLOT,mode:'full',off,partial:[],blockedBands,work};
+}
+// A weekday without its own plan starts from the most recently used one.
+export function resolvePlan(autofill,date,procedures,bands){
+  const own=autofill?.weekdays?.[weekdayOf(date)],inherited=autofill?.lastWeekday!==undefined?autofill.weekdays?.[autofill.lastWeekday]:null;
+  return {plan:normalizePlan(own||inherited,procedures,bands),saved:!!own};
+}
+export function savePlan(autofill,date,plan,groupList){
+  const weekday=weekdayOf(date),{groups:_old,links:_links,...rest}=autofill||emptyAutofill();
+  return {...rest,groupList,weekdays:{...autofill?.weekdays,[weekday]:plan},lastWeekday:weekday};
+}
+// Generator settings from the day plan and the rules kept on each procedure.
+export function composeSettings(plan,procedures,links=[]){
+  const rows={},keyOf=new Map(procedures.map(p=>[p.id,poolKey(p.name)]));
+  for(const pool of procedurePools(procedures)){
+    const cards=[...new Set(pool.templates.map(t=>t.procedure))];
+    rows[pool.key]={...rulesOf(cards[0]),enabled:cards.some(p=>!plan.off.includes(p.id))};
+  }
+  const keys=Object.keys(rows),on=keys.filter(key=>rows[key].enabled),all=on.length===keys.length;
+  const seen=new Set(),keyLinks=[];
+  for(const link of links){
+    const a=keyOf.get(link.a),b=keyOf.get(link.b);
+    if(!a||!b||a===b||seen.has(a)||seen.has(b))continue;
+    seen.add(a);seen.add(b);keyLinks.push({a,b,simultaneous:!!link.simultaneous});
+  }
+  return {settings:{start:plan.start,slot:plan.slot,mode:all?'full':'partial',partialKeys:all?[]:on,blockedBands:plan.blockedBands,rows,instructors:plan.work},links:keyLinks};
+}
+// Older projects kept rules and links inside every weekday's settings, by procedure name.
+export function upgradeAutofill(project){
+  const byKey=new Map();
+  for(const p of project.procedures){const key=poolKey(p.name);if(!byKey.has(key))byKey.set(key,[]);byKey.get(key).push(p);}
+  const idsOf=key=>(byKey.get(key)||[]).map(p=>p.id);
+  for(const stay of project.stays||[]){
+    const a=stay.autofill;if(!a)continue;
+    const days=Object.values(a.weekdays||{}),source=a.weekdays?.[a.lastWeekday]?.rows?a.weekdays[a.lastWeekday]:days.find(s=>s.rows);
+    if(source)for(const [key,row] of Object.entries(source.rows))for(const p of byKey.get(key)||[])p.rules??=cleanRules(row);
+    if(a.links?.length&&!project.links?.length)project.links=a.links.map(l=>({a:idsOf(l.a)[0],b:idsOf(l.b)[0],simultaneous:!!l.simultaneous})).filter(l=>l.a&&l.b&&l.a!==l.b);
+    for(const [weekday,s] of Object.entries(a.weekdays||{})){
+      if(!s.rows)continue;
+      a.weekdays[weekday]={start:s.start,slot:s.slot,mode:s.mode,off:Object.entries(s.rows).filter(([,row])=>row.enabled===false).flatMap(([key])=>idsOf(key)),partial:(s.partialKeys||[]).flatMap(idsOf),blockedBands:s.blockedBands||{},work:s.instructors||{}};
+    }
+    a.groupList=normalizeGroups(a).groupList;delete a.links;delete a.groups;
+  }
+  project.links??=[];
+  return project;
 }
 
 function selectedKeys(settings,links){
@@ -85,7 +153,7 @@ export function checkSettings(settings,procedures,day,links=[]){
     if(!keys.has(pool.key))continue;
     const row=settings.rows[pool.key];
     if(!row.grid&&(!Number.isInteger(row.gap)||row.gap<0||row.gap>240))errors.push(`«${pool.name}»: укажите перерыв от 0 до 240 минут`);
-    if(row.limit!=null&&(!Number.isInteger(row.limit)||row.limit<1||row.limit>500))errors.push(`«${pool.name}»: укажите максимум одновременно от 1 до 500 или оставьте поле пустым`);
+    if(row.limit!=null&&(!Number.isInteger(row.limit)||row.limit<1||row.limit>500))errors.push(`«${pool.name}»: укажите «всего одновременно» от 1 до 500 или оставьте поле пустым`);
     if(row.together!=='single'&&(!Number.isInteger(row.capacity)||row.capacity<2||row.capacity>50))errors.push(`«${pool.name}»: укажите от 2 до 50 пациентов одновременно`);
     for(const template of pool.templates){
       const work=settings.instructors[template.work],duration=durationFor(template.procedure,day);
@@ -191,19 +259,22 @@ function placementProblem(ctx,state,patientId,template,start){
   return returnsCount(ctx,[...items,{start,key}])<=returnsCount(ctx,items)?null:'returns';
 }
 function commit(state,patientId,template,start,gap){
-  const item={patientId,procedureId:template.procedure.id,key:template.key,start,end:start+template.duration,gap};
+  const entry={patientId,procedureId:template.procedure.id,instructorId:template.instructor,start,duration:template.duration,key:template.key};
+  const item={patientId,procedureId:template.procedure.id,key:template.key,start,end:start+template.duration,gap,instructor:template.instructor,template,entry};
   push(state.patients,patientId,item);
   push(state.procedures,template.key,item);
   if(template.instructor!==null)push(state.instructors,template.instructor,item);
-  state.place.push({patientId,procedureId:template.procedure.id,instructorId:template.instructor,start,duration:template.duration,key:template.key});
+  state.place.push(entry);
   return item;
 }
-function rollback(state,patientId,template,item){
-  state.patients.get(patientId).splice(state.patients.get(patientId).indexOf(item),1);
-  state.procedures.get(template.key).splice(state.procedures.get(template.key).indexOf(item),1);
-  if(template.instructor!==null){const list=state.instructors.get(template.instructor);list.splice(list.indexOf(item),1);}
-  state.place.pop();
+function uncommit(state,item){
+  const drop=(list,value)=>list.splice(list.indexOf(value),1);
+  drop(state.patients.get(item.patientId),item);
+  drop(state.procedures.get(item.key),item);
+  if(item.instructor!==null)drop(state.instructors.get(item.instructor),item);
+  drop(state.place,item.entry);
 }
+function rollback(state,patientId,template,item){uncommit(state,item);}
 function placeSingle(ctx,state,patientId,key,rng){
   const templates=ctx.templates.get(key)||[];
   if(!templates.length)return 'no-instructor';
@@ -246,8 +317,8 @@ function placeLink(ctx,state,patientId,link,rng){
   const options=[findLinked(ctx,state,patientId,pairs,link.a,link.b),findLinked(ctx,state,patientId,pairs,link.b,link.a)].filter(Boolean);
   if(!options.length)return 'no-time';
   const best=options.length===2&&options[0].start===options[1].start?options[Math.floor(rng()*2)]:options.reduce((a,b)=>b.start<a.start?b:a);
-  commit(state,patientId,best.one,best.start,gapFor(ctx,best.one.key));
-  commit(state,patientId,best.two,best.next,gapFor(ctx,best.two.key));
+  commit(state,patientId,best.one,best.start,gapFor(ctx,best.one.key)).linked=true;
+  commit(state,patientId,best.two,best.next,gapFor(ctx,best.two.key)).linked=true;
   holdGap(state,patientId,best.start+best.one.duration,best.next);
   return null;
 }
@@ -265,7 +336,7 @@ function placeNextToLocked(ctx,state,patientId,key,lockedItem,rng){
       const span={start:Math.min(start,lockedItem.start),end:Math.max(start+template.duration,lockedItem.end)};
       if(ctx.blocked.some(b=>overlapsRange(span.start,span.end,b)))continue;
       const [from,to]=start<lockedItem.start?[start+template.duration,lockedItem.start]:[lockedItem.end,start];
-      if(gapIsFree(state,patientId,from,to)&&canPlace(ctx,state,patientId,template,start)){commit(state,patientId,template,start,gapFor(ctx,key));holdGap(state,patientId,from,to);return true;}
+      if(gapIsFree(state,patientId,from,to)&&canPlace(ctx,state,patientId,template,start)){commit(state,patientId,template,start,gapFor(ctx,key)).linked=true;holdGap(state,patientId,from,to);return true;}
     }
   }
   return false;
@@ -298,24 +369,82 @@ function attempt(ctx,rng){
       if(reason)miss(key,reason);else broken.push({patientId,key});
     }
   }
+  if(ctx.improve)improve(ctx,state,unplaced,rng);
   return scored(ctx,state,unplaced,broken);
+}
+// Idle minutes between a patient's procedures; blocked periods do not count.
+function windowsOf(ctx,items){
+  const sorted=[...items].sort((a,b)=>a.start-b.start);let total=0;
+  for(let i=1;i<sorted.length;i++){
+    const from=sorted[i-1].end,to=sorted[i].start;
+    if(to<=from)continue;
+    const lunch=ctx.blocked.filter(b=>overlapsRange(from,to,b)).reduce((sum,b)=>sum+b.duration,0);
+    total+=Math.max(0,to-from-lunch);
+  }
+  return total;
+}
+// Repair pass over a finished arrangement, the usual local search for timetables:
+// two patients exchange their places on the same procedure when that leaves both with
+// less idle time, single blocks move to a cheaper place, and what did not fit is tried
+// again. Linked pairs and kept blocks stay where they are.
+function improve(ctx,state,unplaced,rng){
+  const dayEnd=ctx.settings.end,late=item=>Math.max(0,item.end-dayEnd)*1e4;
+  const idle=id=>windowsOf(ctx,state.patients.get(id));
+  for(let pass=0;pass<6;pass++){
+    let changed=false;
+    const groups=new Map();
+    for(const item of [...state.patients.values()].flat())if(item.template&&!item.linked)push(groups,item.key,item);
+    for(const group of groups.values())for(let i=0;i<group.length;i++)for(let j=i+1;j<group.length;j++){
+      if(Date.now()>ctx.deadline)return;
+      const a=group[i],b=group[j];
+      if(a.patientId===b.patientId||a.start===b.start||a.template.duration!==b.template.duration)continue;
+      const before=idle(a.patientId)+idle(b.patientId);
+      uncommit(state,a);uncommit(state,b);
+      let done=false;
+      if(canPlace(ctx,state,a.patientId,b.template,b.start)){
+        const movedA=commit(state,a.patientId,b.template,b.start,a.gap);
+        if(canPlace(ctx,state,b.patientId,a.template,a.start)){
+          const movedB=commit(state,b.patientId,a.template,a.start,b.gap);
+          if(idle(a.patientId)+idle(b.patientId)<before){group[i]=movedA;group[j]=movedB;done=changed=true;}
+          else uncommit(state,movedB);
+        }
+        if(!done)uncommit(state,movedA);
+      }
+      if(!done){group[i]=commit(state,a.patientId,a.template,a.start,a.gap);group[j]=commit(state,b.patientId,b.template,b.start,b.gap);}
+    }
+    const movable=[...groups.values()].flat().sort((a,b)=>b.end-a.end);
+    for(const item of movable){
+      if(Date.now()>ctx.deadline)return;
+      const others=state.place.reduce((max,p)=>p===item.entry?max:Math.max(max,p.start+p.duration),0);
+      uncommit(state,item);
+      const list=state.patients.get(item.patientId);
+      const cost=(start,end)=>late({end})+Math.max(others,end)*10+windowsOf(ctx,[...list,{start,end}]);
+      let best=null,bestCost=cost(item.start,item.end);
+      for(const template of ctx.templates.get(item.key)||[])for(const start of startsFor(ctx,item.key)){
+        if(start===item.start&&template===item.template)continue;
+        const value=cost(start,start+template.duration);
+        if(value>=bestCost||!canPlace(ctx,state,item.patientId,template,start))continue;
+        best={template,start};bestCost=value;
+      }
+      if(best){commit(state,item.patientId,best.template,best.start,gapFor(ctx,item.key));changed=true;}
+      else commit(state,item.patientId,item.template,item.start,item.gap);
+    }
+    for(let i=unplaced.length-1;i>=0;i--){
+      const miss=unplaced[i];
+      if(ctx.linkOf.get(miss.key)||placeSingle(ctx,state,miss.patientId,miss.key,rng)!==null)continue;
+      unplaced.splice(i,1);changed=true;
+    }
+    if(!changed)return;
+  }
 }
 function scored(ctx,state,unplaced,broken){
   const overtime=state.place.filter(p=>p.start+p.duration>ctx.settings.end);
   const overtimeMinutes=overtime.reduce((sum,p)=>sum+p.start+p.duration-ctx.settings.end,0);
   const lastEnd=state.place.reduce((max,p)=>Math.max(max,p.start+p.duration),0);
   let windows=0;
-  for(const items of state.patients.values()){
-    const sorted=[...items].sort((a,b)=>a.start-b.start);
-    for(let i=1;i<sorted.length;i++){
-      const from=sorted[i-1].end,to=sorted[i].start;
-      if(to<=from)continue;
-      const lunch=ctx.blocked.filter(b=>overlapsRange(from,to,b)).reduce((sum,b)=>sum+b.duration,0);
-      windows+=Math.max(0,to-from-lunch);
-    }
-  }
+  for(const items of state.patients.values())windows+=windowsOf(ctx,items);
   const score=unplaced.length*1e9+broken.length*1e7+overtimeMinutes*1e4+lastEnd*10+windows;
-  return {state,place:state.place,unplaced,broken,overtime:overtime.length,score};
+  return {state,place:state.place,unplaced,broken,overtime:overtime.length,windows,score};
 }
 function lockedReturns(ctx){
   const byInstructor=new Map();
@@ -324,9 +453,10 @@ function lockedReturns(ctx){
 }
 // Tries many random arrangements and returns the best. Nothing is changed here:
 // the caller removes `remove` and creates appointments from `place`.
-export function planDay({procedures,day,settings,links=[],groupList=[],rng=Math.random,attempts=400,budgetMs=Infinity}){
+export function planDay({procedures,day,settings,links=[],groupList=[],rng=Math.random,attempts=400,budgetMs=Infinity,improve:repair=true}){
   const ctx=context({procedures,day,settings,links,groupList});
   const started=Date.now();
+  ctx.improve=repair;ctx.deadline=started+budgetMs;
   let best=null;
   for(let i=0;i<attempts;i++){
     const result=attempt(ctx,rng);
@@ -339,6 +469,7 @@ export function planDay({procedures,day,settings,links=[],groupList=[],rng=Math.
     placed:place.length,
     total:place.length+best.unplaced.length,
     overtime:best.overtime,
+    windows:best.windows,
     unplaced:best.unplaced.map(item=>({...item,name:nameOf(item.key),...explainUnplaced(ctx,best.state,item)})),
     broken:best.broken.map(item=>({...item,name:nameOf(item.key)})),
     lockedReturns:lockedReturns(ctx)
@@ -375,7 +506,7 @@ export function describeCause(item,nameOf=id=>id){
     case 'hours':return {text:`вне времени работы${names?`: ${names}`:''}${until}`,hint:'Расширьте поля «с» и «до» у инструктора.'};
     case 'blocked':return {text:'всё оставшееся время занято периодами «Не ставить на»',hint:'Снимите галочку у периода.'};
     case 'patient':return {text:'у пациента нет свободного времени, когда работает инструктор',hint:'Освободите пациента или расширьте время инструктора.'};
-    case 'limit':return {text:`достигнут максимум одновременно${item.limit!=null?`: ${item.limit}`:''}`,hint:'Увеличьте «Макс.» или добавьте другое время.'};
+    case 'limit':return {text:`занято всё «всего на процедуре одновременно»${item.limit!=null?`: ${item.limit}`:''}`,hint:'Увеличьте «Всего на процедуре одновременно» в свойствах процедуры или добавьте другое время.'};
     case 'busy':return {text:`нет свободного времени у инструктора${names?`: ${names}`:''}${until}`,hint:until?'Сдвиньте «до», добавьте инструктора или сделайте процедуру совместной.':'Добавьте инструктора или сделайте процедуру совместной.'};
     case 'returns':return {text:`инструктор уже перешёл на другую процедуру${names?`: ${names}`:''}`,hint:'Инструктор не возвращается к прежней процедуре: задайте порядок полями «с» и «до».'};
     default:return {text:'до 24:00 не осталось места',hint:'Уменьшите число процедур в этот день.'};

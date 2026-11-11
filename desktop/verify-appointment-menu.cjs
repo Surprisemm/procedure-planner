@@ -16,8 +16,8 @@ module.exports=async({window})=>{
     const first=groups[type][0],other=list.find(a=>a.procedureId!==type);
     assert(other,'Test day has only one procedure type');
     let menu=open(first.id);
-    assert(menu&&items(menu).length===3,'Menu must have 3 items');
-    assert(/Блокировать/.test(items(menu)[0].textContent)&&/Удалить это/.test(items(menu)[1].textContent)&&/Удалить все/.test(items(menu)[2].textContent),'Menu labels wrong');
+    assert(menu&&items(menu).length===4,'Menu must have 4 items');
+    assert(/Блокировать/.test(items(menu)[0].textContent)&&/Копировать/.test(items(menu)[1].textContent)&&/Удалить это/.test(items(menu)[2].textContent)&&/Удалить все/.test(items(menu)[3].textContent),'Menu labels wrong');
     document.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,key:'Escape'}));
     assert(!document.querySelector('.appt-menu'),'Escape did not close menu');
     menu=open(first.id);items(menu)[0].click();
@@ -25,12 +25,12 @@ module.exports=async({window})=>{
     assert(read().days[date].appointments.find(a=>a.id===first.id).locked===true,'Lock item did not lock');
     menu=open(first.id);assert(/Снять блокировку/.test(items(menu)[0].textContent),'Lock label not switched');items(menu)[0].click();
     assert(!read().days[date].appointments.find(a=>a.id===first.id).locked,'Unlock failed');
-    menu=open(first.id);items(menu)[1].click();
+    menu=open(first.id);items(menu)[2].click();
     let now=read().days[date].appointments;
     assert(now.length===list.length-1&&!now.some(a=>a.id===first.id),'Delete this removed wrong count');
     undo();await frame();
     assert(read().days[date].appointments.length===list.length,'Undo of delete-this failed');
-    menu=open(first.id);items(menu)[2].click();
+    menu=open(first.id);items(menu)[3].click();
     now=read().days[date].appointments;
     assert(!now.some(a=>a.procedureId===type),'Delete all left blocks of the type');
     assert(now.length===list.length-groups[type].length,'Delete all removed other types');

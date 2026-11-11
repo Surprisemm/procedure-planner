@@ -84,3 +84,8 @@ test('the working day end is a day property and copies with the day',()=>{
   day.workEnd=0;assert.throws(()=>validateProject(p),/рабочего дня/);day.workEnd=1500;assert.throws(()=>validateProject(p),/рабочего дня/);
   delete day.workEnd;validateProject(p);
 });
+
+test('display options are optional and must be an object',()=>{
+  const p=newProject(false);p.display={instructors:true};validateProject(p);
+  p.display=[];assert.throws(()=>validateProject(p),/вида/);
+});
